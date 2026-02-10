@@ -2,10 +2,14 @@
   "private": true,
   "workspaces": [
     "server",
-    "client"
+    "client",
+    "shared"
   ],
   "scripts": {
-    "dev": "npm run dev --workspace server",
+    "dev": "concurrently \"npm run dev --workspace client\" \"npm run dev --workspace server\" \"npm run dev --workspace shared\"",
     "build": "npm run build --workspace client"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
   }
 }

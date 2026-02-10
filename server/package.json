@@ -11,14 +11,17 @@
     "dev": "nodemon --exec tsx ./src/server.ts"
   },
   "dependencies": {
+    "@app/shared": "file:../shared",
     "@fastify/cors": "^9.0.0",
-    "@fastify/static": "^7.0.0",
+    "@fastify/static": "^7.0.4",
     "fastify": "^4.26.0"
   },
   "devDependencies": {
     "@types/node": "^20.19.33",
     "fastify-cli": "^6.0.0",
+    "nodemon": "^3.1.11",
     "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   }
 }
