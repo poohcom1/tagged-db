@@ -3,12 +3,14 @@ import type {
   ColumnEditAction,
   ColumnEditType,
 } from "@app/shared/sheetMigration";
-import type { ColumnType, Sheet, SheetData } from "@app/shared/sheets";
+import type { ColumnType, SheetMeta, SheetData } from "@app/shared/sheets";
 
 export interface DBInterface {
   // Sheets
-  createSheet(): Promise<Result<Sheet>>;
-  getSheets(): Promise<Result<Sheet[]>>;
+  createSheet(title: string): Promise<Result<SheetMeta>>;
+  renameSheet(id: string, title: string): Promise<Result<SheetMeta>>;
+  deleteSheet(id: string): Promise<Result<void>>;
+  getSheets(): Promise<Result<SheetData[]>>;
 
   // Sheet
   getSheetData(id: string): Promise<SheetData | undefined>;

@@ -1,16 +1,36 @@
 import * as migration from "@app/shared/sheetMigration";
 import type { DBInterface } from "../types.js";
 import { Err, Ok } from "@app/shared/result";
-import { type Sheet, type SheetData } from "@app/shared/sheets";
+import { type SheetMeta, type SheetData } from "@app/shared/sheets";
 import { resolve } from "path";
 import { writeFile } from "fs/promises";
 
 export const memoryDb: DBInterface = {
-  async createSheet() {
-    return Ok({ id: "1", name: "Sheet 1" });
+  async createSheet(title: string) {
+    if (Object.values(db.sheetData).find((s) => s.name === title)) {
+      return Err("Sheet already exists");
+    }
+
+    const uuid = crypto.randomUUID();
+    const sheet = migration.createSheet(uuid, title);
+    db.sheetData[uuid] = sheet;
+    return Ok(sheet);
+  },
+  async renameSheet(sheetId: string, title: string) {
+    const sheet = db.sheetData[sheetId];
+    if (!sheet) {
+      return Err("Sheet not found");
+    }
+    sheet.name = title;
+    db.sheetData[sheetId] = sheet;
+    return Ok(sheet);
+  },
+  async deleteSheet(sheetId: string) {
+    delete db.sheetData[sheetId];
+    return Ok();
   },
   async getSheets() {
-    return Ok([{ id: "1", name: "Sheet 1" }]);
+    return Ok(Object.values(db.sheetData));
   },
   async getSheetData(sheetId: string) {
     return db.sheetData[sheetId];
@@ -37,6 +57,8 @@ export const memoryDb: DBInterface = {
       sheetData.tagCache = migration.updateTagCache(sheetData);
     }
 
+    db.sheetData[sheetId] = migration.updateTimestamp(sheetData);
+
     return Ok();
   },
 
@@ -50,7 +72,7 @@ export const memoryDb: DBInterface = {
     if (!res.ok) {
       return Err(res.error);
     }
-    db.sheetData[sheetId] = res.value;
+    db.sheetData[sheetId] = migration.updateTimestamp(res.value);
     return Ok();
   },
   async updateColumn(sheetId, columnId, payload) {
@@ -62,7 +84,7 @@ export const memoryDb: DBInterface = {
     if (!res.ok) {
       return Err(res.error);
     }
-    db.sheetData[sheetId] = res.value;
+    db.sheetData[sheetId] = migration.updateTimestamp(res.value);
     return Ok();
   },
   async updateColumnBatched(sheetId, columnId, payloads) {
@@ -79,18 +101,20 @@ export const memoryDb: DBInterface = {
       sheetData = res.value;
     }
 
-    db.sheetData[sheetId] = sheetData;
+    db.sheetData[sheetId] = migration.updateTimestamp(sheetData);
     return Ok();
   },
 };
 
 const db: {
-  sheets: Record<string, Sheet>;
   sheetData: Record<string, SheetData>;
 } = {
-  sheets: {},
   sheetData: {
     "1": {
+      id: "1",
+      name: "Sheet 1",
+      created: new Date().toISOString(),
+      updated: new Date().toISOString(),
       columns: [
         {
           id: "name",

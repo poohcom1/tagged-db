@@ -52,6 +52,14 @@ export const SheetPage = () => {
     null,
   );
 
+  useEffect(() => {
+    if (sheetData) {
+      document.title = sheetData.name + " | TaggedDB";
+    } else {
+      document.title = "Loading... | TaggedDB";
+    }
+  }, [sheetData]);
+
   const loadSheets = useCallback(async () => {
     const res = await api.getSheet(sheetId);
     if (res.ok) {

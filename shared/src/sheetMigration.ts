@@ -6,6 +6,23 @@ import {
   validateType,
 } from "./sheetValidation";
 
+export function updateTimestamp(sheetData: SheetData): SheetData {
+  return { ...sheetData, updated: new Date().toISOString() };
+}
+
+// Sheets
+export function createSheet(id: string, name: string): SheetData {
+  return {
+    id,
+    name,
+    created: new Date().toISOString(),
+    updated: new Date().toISOString(),
+    columns: [],
+    rows: [],
+    tagCache: {},
+  };
+}
+
 // Sheet
 export function updateTagCache(sheetData: SheetData): SheetData["tagCache"] {
   const tagCache: SheetData["tagCache"] = {};
@@ -115,7 +132,7 @@ export function updateColumn(
       break;
   }
 
-  return Ok({ ...sheetData, columns });
+  return Ok({ ...updateTimestamp(sheetData), columns });
 }
 
 export function createColumn(

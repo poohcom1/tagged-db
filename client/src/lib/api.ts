@@ -1,8 +1,65 @@
 import { Err, Ok, Result } from "@app/shared/result";
 import { ColumnEditAction } from "@app/shared/sheetMigration";
-import { ColumnType, SheetData } from "@app/shared/sheets";
+import { ColumnType, SheetData, SheetMeta } from "@app/shared/sheets";
 
 // API
+export async function getSheetsMeta(): Promise<Result<SheetMeta[]>> {
+  try {
+    const res = await trackedFetch("/api/sheets");
+    await handleHttpError(res);
+    const sheetsMeta = (await res.json()) as SheetMeta[];
+    return Ok(sheetsMeta);
+  } catch (e) {
+    return Err(handleErrorObject(e));
+  }
+}
+
+export async function renameSheet(sheetId: string, title: string) {
+  try {
+    const res = await trackedFetch(`/api/sheets/${sheetId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ title }),
+    });
+    await handleHttpError(res);
+    const sheetMeta = (await res.json()) as SheetMeta;
+    return Ok(sheetMeta);
+  } catch (e) {
+    return Err(handleErrorObject(e));
+  }
+}
+
+export async function deleteSheet(sheetId: string) {
+  try {
+    const res = await trackedFetch(`/api/sheets/${sheetId}`, {
+      method: "DELETE",
+    });
+    await handleHttpError(res);
+    return Ok();
+  } catch (e) {
+    return Err(handleErrorObject(e));
+  }
+}
+
+export async function createSheet(title: string): Promise<Result<SheetMeta>> {
+  try {
+    const res = await trackedFetch("/api/sheets", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ title }),
+    });
+    await handleHttpError(res);
+    const sheetMeta = (await res.json()) as SheetMeta;
+    return Ok(sheetMeta);
+  } catch (e) {
+    return Err(handleErrorObject(e));
+  }
+}
+
 export async function getSheet(sheetId: string): Promise<Result<SheetData>> {
   try {
     const res = await trackedFetch(`/api/sheet-data/${sheetId}`);
@@ -10,7 +67,7 @@ export async function getSheet(sheetId: string): Promise<Result<SheetData>> {
     const sheetData = (await res.json()) as SheetData;
     return Ok(sheetData);
   } catch (e) {
-    return Err(handlerErrorObject(e));
+    return Err(handleErrorObject(e));
   }
 }
 
@@ -31,7 +88,7 @@ export async function updateCell(
     await handleHttpError(res);
     return Ok();
   } catch (e) {
-    return Err(handlerErrorObject(e));
+    return Err(handleErrorObject(e));
   }
 }
 
@@ -52,7 +109,7 @@ export async function createColumn(
     await handleHttpError(res);
     return Ok();
   } catch (e) {
-    return Err(handlerErrorObject(e));
+    return Err(handleErrorObject(e));
   }
 }
 
@@ -75,7 +132,7 @@ export async function updateColumnBatched(
     await handleHttpError(res);
     return Ok();
   } catch (e) {
-    return Err(handlerErrorObject(e));
+    return Err(handleErrorObject(e));
   }
 }
 
@@ -117,11 +174,17 @@ async function trackedFetch(input: RequestInfo, init?: RequestInit) {
 // Helper
 async function handleHttpError(res: Response) {
   if (!res.ok) {
-    throw await res.text();
+    const text = await res.text();
+    if (text) {
+      throw new Error(text);
+    } else {
+      throw new Error("HTTP Error: " + res.status);
+    }
   }
 }
 
-function handlerErrorObject(e: unknown): string {
+function handleErrorObject(e: unknown): string {
+  console.error(e);
   if (e instanceof Error) {
     return e.message;
   }

@@ -1,13 +1,15 @@
 type ColumnId = string;
 
 // Sheets
-export interface Sheet {
+export interface SheetMeta {
   id: string;
   name: string;
+  created: string;
+  updated: string;
 }
 
 // Sheet
-export interface SheetData {
+export interface SheetData extends SheetMeta {
   rows: Row[];
   columns: Column[];
   tagCache: Record<ColumnId, string[]>;

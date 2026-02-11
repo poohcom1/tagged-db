@@ -1,7 +1,7 @@
 import Fastify from "fastify";
 import fastifyStatic from "@fastify/static";
 import path from "path";
-import type { Sheet, SheetData } from "@app/shared/sheets";
+import type { SheetMeta, SheetData } from "@app/shared/sheets";
 import { memoryDb } from "./db/memoryDb.js";
 import type { ColumnEditAction } from "@app/shared/sheetMigration";
 import { validateType } from "@app/shared/sheetValidation";
@@ -30,8 +30,8 @@ server.get("/api/ping", async function handler(request, reply) {
 // My Sheets
 const db = memoryDb;
 
-server.get<{ Reply: Sheet[] }>(
-  "/api/my-sheets",
+server.get<{ Reply: SheetMeta[] }>(
+  "/api/sheets",
   async function handler(request, reply) {
     const res = await db.getSheets();
     if (res.ok) {
@@ -42,12 +42,50 @@ server.get<{ Reply: Sheet[] }>(
   },
 );
 
+server.post<{ Body: { title: string }; Reply: SheetMeta | string }>(
+  "/api/sheets",
+  async function handler(request, reply) {
+    const res = await db.createSheet(request.body.title);
+    if (res.ok) {
+      return res.value;
+    } else {
+      return reply.code(500).send(res.error);
+    }
+  },
+);
+
+server.patch<{
+  Params: { sheetId: string };
+  Body: { title: string };
+  Reply: SheetMeta | string;
+}>("/api/sheets/:sheetId", async function handler(request, reply) {
+  const res = await db.renameSheet(request.params.sheetId, request.body.title);
+  if (res.ok) {
+    return res.value;
+  } else {
+    return reply.code(500).send(res.error);
+  }
+});
+
+server.delete<{
+  Params: { sheetId: string };
+  Reply: SheetMeta | string;
+}>("/api/sheets/:sheetId", async function handler(request, reply) {
+  const res = await db.deleteSheet(request.params.sheetId);
+  if (res.ok) {
+    return reply.code(200).send();
+  } else {
+    return reply.code(500).send(res.error);
+  }
+});
+
 // Sheet
-server.get<{ Params: { sheetId: string }; Reply: SheetData }>(
+server.get<{ Params: { sheetId: string }; Reply: SheetData | string }>(
   "/api/sheet-data/:sheetId",
   async function handler(request, reply) {
     const sheetData = await db.getSheetData(request.params.sheetId);
-    if (!sheetData) return reply.code(500).send();
+    if (!sheetData)
+      return reply.code(500).send("Sheet not found: " + request.params.sheetId);
     return sheetData;
   },
 );
