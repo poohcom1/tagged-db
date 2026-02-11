@@ -1,20 +1,13 @@
 import { useEffect, useState } from "react";
 import styled from "styled-components";
+import { BaseButton } from "../../../../components/BaseButton";
 
 const Text = styled.span`
   padding: 8px 12px;
   font-weight: 600;
 `;
 
-const EditButton = styled.button`
-  // clear
-  background: none;
-  border: none;
-  padding: 0;
-  font: inherit;
-  cursor: pointer;
-  outline: inherit;
-
+const EditButton = styled(BaseButton)`
   font-size: smaller;
   &:hover {
     text-decoration: underline;
@@ -23,9 +16,9 @@ const EditButton = styled.button`
 `;
 
 interface Props {
-  onChange?: (value: number) => void;
+  onChange?: (value: string) => void;
   onCancel?: () => void;
-  value: number;
+  value: string;
   min?: number;
   max?: number;
   step?: number;
@@ -57,7 +50,7 @@ export const NumberEdit = ({ value, onChange, min, max, step }: Props) => {
           }
         }}
         onChange={(e) => {
-          setCurrentValue(Number(e.target.value));
+          setCurrentValue(e.target.value);
         }}
         onBlur={() => {
           onChange?.(currentValue);

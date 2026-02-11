@@ -1,5 +1,7 @@
 import styled from "styled-components";
 
+export const HEADER_HEIGHT = 36;
+
 export const Table = styled.table`
   border-collapse: collapse;
   font-size: 14px;
@@ -7,6 +9,7 @@ export const Table = styled.table`
 
 export const Thead = styled.thead`
   background: #7997d4;
+  height: ${HEADER_HEIGHT}px;
 `;
 
 export const Th = styled.th`

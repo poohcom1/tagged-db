@@ -2,29 +2,17 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";
 import reportWebVitals from "./reportWebVitals";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
-import { MySheetsPage } from "./pages/mySheets/MySheetsPage";
-import { SheetPage } from "./pages/sheet/SheetPage";
+import { PageRoutes } from "./routes";
+import Modal from "react-modal";
+
+Modal.setAppElement("#root");
 
 const root = ReactDOM.createRoot(
   document.getElementById("root") as HTMLElement,
 );
 root.render(
   <React.StrictMode>
-    <BrowserRouter>
-      <Routes>
-        <Route
-          path="/"
-          element={<MySheetsPage />}
-          handle={{ title: "Tagged DB" }}
-        />
-        <Route
-          path="/sheet"
-          element={<SheetPage />}
-          handle={{ title: "Tagged DB" }}
-        />
-      </Routes>
-    </BrowserRouter>
+    <PageRoutes />
   </React.StrictMode>,
 );
 

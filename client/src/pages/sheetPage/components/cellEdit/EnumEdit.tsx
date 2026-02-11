@@ -4,7 +4,7 @@ interface Props {
   onChange?: (value: string) => void;
   value: string;
 
-  options: string[];
+  options?: string[];
 }
 
 export const EnumEdit = ({ value, onChange, options }: Props) => {
@@ -16,7 +16,8 @@ export const EnumEdit = ({ value, onChange, options }: Props) => {
 
   return (
     <select value={currentValue} onChange={(e) => onChange?.(e.target.value)}>
-      {options.map((option) => (
+      <option value="">-</option>
+      {(options ?? []).map((option) => (
         <option key={option}>{option}</option>
       ))}
     </select>

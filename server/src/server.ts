@@ -1,8 +1,9 @@
 import Fastify from "fastify";
 import fastifyStatic from "@fastify/static";
 import path from "path";
-import type { Sheet, SheetData } from "@app/shared";
+import type { Sheet, SheetData } from "@app/shared/sheets";
 import { memoryDb } from "./db/memoryDb.js";
+import type { ColumnEditAction } from "@app/shared/sheetMigration";
 
 const server = Fastify({
   logger: true,
@@ -67,10 +68,29 @@ server.post<{
   }
 });
 
+server.post<{
+  Body: { payload: ColumnEditAction[] };
+  Params: { id: string; columnId: string };
+}>(
+  "/api/sheet-data/:id/column/:columnId",
+  async function handler(request, reply) {
+    const res = await db.updateColumnBatched(
+      request.params.id,
+      request.params.columnId,
+      request.body.payload,
+    );
+    if (res.ok) {
+      return reply.code(200).send();
+    } else {
+      return reply.code(500).send(res.error);
+    }
+  },
+);
+
 // Run the server!
 try {
   server.listen({ port: 3000 }, (err, address) =>
-    console.log(`Server listening at ${address}`),
+    console.log(`Server listening at http://localhost:3000`),
   );
 } catch (err) {
   server.log.error(err);

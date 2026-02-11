@@ -1,5 +1,4 @@
 type ColumnId = string;
-export const NAME_COLUMN_ID = "__name";
 
 // Sheets
 export interface Sheet {
@@ -35,7 +34,7 @@ interface NumberColumn extends BaseColumn {
 
 interface EnumColumn extends BaseColumn {
   type: "enum";
-  options: string[];
+  options?: string[];
 }
 
 interface TagsColumn extends BaseColumn {
@@ -44,17 +43,9 @@ interface TagsColumn extends BaseColumn {
 
 export type ColumnType = "text" | "number" | "enum" | "tags";
 
-export type ColumnValue = string | number | string[];
-
-export type ColumnTypeMap = {
-  text: string;
-  number: number;
-  enum: string;
-  tags: string[];
-};
+export type ColumnValue = string;
 
 interface Row {
   id: string;
-  name: string;
   values: Record<ColumnId, ColumnValue>;
 }

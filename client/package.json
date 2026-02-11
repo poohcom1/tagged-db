@@ -2,6 +2,7 @@
   "name": "tagged-db-client",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "dependencies": {
     "@app/shared": "file:../shared",
     "@testing-library/dom": "^10.4.1",
@@ -12,11 +13,13 @@
     "@types/node": "^25.2.2",
     "@types/react": "^19.2.13",
     "@types/react-dom": "^19.2.3",
+    "@types/react-modal": "^3.16.3",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "react-icons": "^5.5.0",
+    "react-modal": "^3.16.3",
     "react-router-dom": "^7.13.0",
     "styled-components": "^6.3.9",
-    "typescript": "^4.9.5",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
@@ -43,7 +46,12 @@
     ]
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.2",
     "@vitejs/plugin-react": "^4.7.0",
+    "eslint": "^9.39.2",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.55.0",
     "vite": "^6.4.1"
   }
 }

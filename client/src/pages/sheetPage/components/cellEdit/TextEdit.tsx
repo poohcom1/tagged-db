@@ -1,20 +1,13 @@
 import { useEffect, useState } from "react";
 import styled from "styled-components";
+import { BaseButton } from "../../../../components/BaseButton";
 
 const Text = styled.span`
   padding: 8px 12px;
   font-weight: 600;
 `;
 
-const EditButton = styled.button`
-  // clear
-  background: none;
-  border: none;
-  padding: 0;
-  font: inherit;
-  cursor: pointer;
-  outline: inherit;
-
+const EditButton = styled(BaseButton)`
   font-size: smaller;
   &:hover {
     text-decoration: underline;
