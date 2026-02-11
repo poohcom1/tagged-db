@@ -1,3 +1,4 @@
+import { Err, Ok, Result } from "./result";
 import { ColumnType } from "./sheets";
 
 export function validateType(type: string): type is ColumnType {
@@ -27,4 +28,25 @@ export function validateOptionsReorder(optionsA: string[], optionsB: string[]) {
     optionsA.length === optionsB.length &&
     optionsA.every((o, i) => o === optionsB[i])
   );
+}
+
+export function validateEnums(options: string[]): Result<void> {
+  // check all unique
+  const unique = new Set(options);
+  if (unique.size !== options.length) {
+    return Err("Options must be unique");
+  }
+  if (options.some((o) => o === "")) {
+    return Err("Options cannot be empty strings");
+  }
+  return Ok();
+}
+
+const DEFAULT_TEXT = "Dropdown option #";
+export function addDefaultEnum(options: string[]): string[] {
+  let i = 1;
+  while (options.includes(DEFAULT_TEXT + i)) {
+    i += 1;
+  }
+  return [...options, DEFAULT_TEXT + i];
 }

@@ -4,6 +4,7 @@ import path from "path";
 import type { Sheet, SheetData } from "@app/shared/sheets";
 import { memoryDb } from "./db/memoryDb.js";
 import type { ColumnEditAction } from "@app/shared/sheetMigration";
+import { validateType } from "@app/shared/sheetValidation";
 
 const server = Fastify({
   logger: true,
@@ -42,24 +43,27 @@ server.get<{ Reply: Sheet[] }>(
 );
 
 // Sheet
-server.get<{ Reply: SheetData; Params: { id: string } }>(
-  "/api/sheet-data/:id",
+server.get<{ Params: { sheetId: string }; Reply: SheetData }>(
+  "/api/sheet-data/:sheetId",
   async function handler(request, reply) {
-    const sheetData = await db.getSheetData(request.params.id);
+    const sheetData = await db.getSheetData(request.params.sheetId);
     if (!sheetData) return reply.code(500).send();
     return sheetData;
   },
 );
 
 server.post<{
-  Body: { rowId: string; columnId: string; value: string };
-  Params: { id: string };
-}>("/api/sheet-data/:id", async function handler(request, reply) {
-  const res = await db.updateSheetDataCell(
-    request.params.id,
-    request.body.rowId,
+  Params: { sheetId: string };
+  Body: { columnId: string; title: string; type: string };
+}>("/api/sheet-data/:sheetId/column", async function handler(request, reply) {
+  if (!validateType(request.body.type))
+    return reply.code(500).send("Invalid column type: " + request.body.type);
+
+  const res = await db.addColumn(
+    request.params.sheetId,
     request.body.columnId,
-    request.body.value,
+    request.body.title,
+    request.body.type,
   );
   if (res.ok) {
     return reply.code(200).send();
@@ -68,14 +72,33 @@ server.post<{
   }
 });
 
-server.post<{
+server.patch<{
+  Params: { sheetId: string };
+  Body: { rowId: string; columnId: string; value: string };
+}>("/api/sheet-data/:sheetId", async function handler(request, reply) {
+  const res = await db.updateSheetDataCell(
+    request.params.sheetId,
+    request.body.rowId,
+    request.body.columnId,
+    request.body.value,
+  );
+  // fake delay 20 s
+  await new Promise((resolve) => setTimeout(resolve, 20000));
+  if (res.ok) {
+    return reply.code(200).send();
+  } else {
+    return reply.code(500).send(res.error);
+  }
+});
+
+server.patch<{
   Body: { payload: ColumnEditAction[] };
-  Params: { id: string; columnId: string };
+  Params: { sheetId: string; columnId: string };
 }>(
-  "/api/sheet-data/:id/column/:columnId",
+  "/api/sheet-data/:sheetId/column/:columnId",
   async function handler(request, reply) {
     const res = await db.updateColumnBatched(
-      request.params.id,
+      request.params.sheetId,
       request.params.columnId,
       request.body.payload,
     );

@@ -5,17 +5,26 @@ import { Cell } from "./components/Cell";
 import { Table, Th, Thead, Tbody, HEADER_HEIGHT } from "./components/Table";
 import styled from "styled-components";
 import { useParams } from "react-router-dom";
-import { BaseButton } from "../../components/BaseButton";
 import { IoIosAdd } from "react-icons/io";
 import { HeaderCell } from "./components/HeaderCell";
-import { EditModalContainer } from "../../components/EditModalContainer";
 import { ColumnEdit } from "./components/ColumnEdit";
 import * as api from "../../lib/api";
+import { BasicButton } from "../../components/BasicButton";
 
 // Styles
 const TableContainer = styled.div`
   margin: 32px;
   display: flex;
+`;
+
+const EmptySheetContainer = styled.div`
+  margin: 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  font-size: larger;
+  font-weight: 600;
 `;
 
 // - Column Button
@@ -29,15 +38,9 @@ const AddColumnContainer = styled.div`
   align-items: center;
 `;
 
-const AddColumnButton = styled(BaseButton)`
+const AddColumnButton = styled(BasicButton)`
   height: ${HEADER_HEIGHT - BUTTON_MARGIN}px;
   width: ${HEADER_HEIGHT - BUTTON_MARGIN}px;
-  justify-content: center;
-  align-items: center;
-
-  &:hover {
-    background-color: #b4b4b4;
-  }
 `;
 
 // Component Page
@@ -78,10 +81,6 @@ export const SheetPage = () => {
         loadSheets();
         return;
       }
-      const res = await api.updateCell(sheetId, rowId, column.id, value);
-      if (!res.ok) {
-        alert(res.error);
-      }
 
       let tagCache: SheetData["tagCache"] | undefined;
       if (column.type === "tags") {
@@ -95,6 +94,11 @@ export const SheetPage = () => {
           ? { ...s, rows: rowsResult.value, tagCache: tagCache ?? s.tagCache }
           : null,
       );
+
+      const res = await api.updateCell(sheetId, rowId, column.id, value);
+      if (!res.ok) {
+        alert(res.error);
+      }
     },
     [loadSheets, sheetData, sheetId],
   );
@@ -104,12 +108,6 @@ export const SheetPage = () => {
       if (sheetData === null) {
         return;
       }
-      api.updateColumnBatched(sheetId, columnId, actions).then((res) => {
-        if (!res.ok) {
-          alert(res.error);
-          loadSheets();
-        }
-      });
 
       let updatedSheetData = sheetData;
       for (const action of actions) {
@@ -125,15 +123,40 @@ export const SheetPage = () => {
         updatedSheetData = columnUpdateResult.value;
       }
       setSheetData(updatedSheetData);
+
+      const res = await api.updateColumnBatched(sheetId, columnId, actions);
+      if (!res.ok) {
+        alert(res.error);
+        loadSheets();
+      }
     },
     [loadSheets, sheetData, sheetId],
   );
 
-  const addColumn = useCallback(() => {}, []);
+  const addColumn = useCallback(async () => {
+    if (sheetData === null) {
+      return;
+    }
+    const column = migrator.createColumn(crypto.randomUUID());
+    const updateRes = migrator.addColumn(sheetData, column);
+    if (updateRes.ok) {
+      setSheetData(updateRes.value);
+      const res = await api.createColumn(
+        sheetId,
+        column.id,
+        column.title,
+        column.type,
+      );
+      if (!res.ok) {
+        alert("Failed to create column on BE: " + res.error);
+        loadSheets();
+      }
+    } else {
+      alert("Failed to create column on FE: " + updateRes.error);
+    }
+  }, [loadSheets, sheetData, sheetId]);
 
   if (!sheetData) return null;
-
-  console.log(sheetData.tagCache);
 
   return (
     <TableContainer>
@@ -145,7 +168,10 @@ export const SheetPage = () => {
               <Th key={column.id}>
                 <HeaderCell
                   title={column.title}
-                  onEdit={() => setCurrentEditColumnId(column.id)}
+                  onEdit={() => {
+                    console.log("column edit: " + column.id);
+                    setCurrentEditColumnId(column.id);
+                  }}
                 />
               </Th>
             ))}
@@ -169,29 +195,34 @@ export const SheetPage = () => {
           ))}
         </Tbody>
       </Table>
-      <AddColumnContainer>
-        <AddColumnButton onClick={addColumn} title="Add Column">
-          <IoIosAdd />
-        </AddColumnButton>
-      </AddColumnContainer>
+      {sheetData.columns.length === 0 ? (
+        <EmptySheetContainer>
+          <div>Empty Sheet!</div>
+          <button onClick={addColumn}>Add Column</button>
+        </EmptySheetContainer>
+      ) : (
+        <AddColumnContainer>
+          <AddColumnButton onClick={addColumn} title="Add Column">
+            <IoIosAdd />
+          </AddColumnButton>
+        </AddColumnContainer>
+      )}
+
       {/* Modals */}
-      <EditModalContainer
+      <ColumnEdit
+        key={currentEditColumnId} // force state reset
         isOpen={!!currentEditColumnId}
         onClose={() => setCurrentEditColumnId(null)}
-      >
-        <ColumnEdit
-          key={currentEditColumnId} // force state reset
-          columnId={currentEditColumnId}
-          sheetData={sheetData}
-          onCommit={(actions) => {
-            if (!currentEditColumnId) {
-              return;
-            }
-            onUpdateColumn(currentEditColumnId, actions);
-            setCurrentEditColumnId(null);
-          }}
-        />
-      </EditModalContainer>
+        columnId={currentEditColumnId}
+        sheetData={sheetData}
+        onCommit={(actions) => {
+          if (!currentEditColumnId) {
+            return;
+          }
+          onUpdateColumn(currentEditColumnId, actions);
+          setCurrentEditColumnId(null);
+        }}
+      />
     </TableContainer>
   );
 };

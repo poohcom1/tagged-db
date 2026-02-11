@@ -2,6 +2,8 @@ import * as migration from "@app/shared/sheetMigration";
 import type { DBInterface } from "../types.js";
 import { Err, Ok } from "@app/shared/result";
 import { type Sheet, type SheetData } from "@app/shared/sheets";
+import { resolve } from "path";
+import { writeFile } from "fs/promises";
 
 export const memoryDb: DBInterface = {
   async createSheet() {
@@ -10,12 +12,12 @@ export const memoryDb: DBInterface = {
   async getSheets() {
     return Ok([{ id: "1", name: "Sheet 1" }]);
   },
-  async getSheetData(id: string) {
-    return db.sheetData[id];
+  async getSheetData(sheetId: string) {
+    return db.sheetData[sheetId];
   },
 
-  async updateSheetDataCell(id, rowId, columnId, value) {
-    const sheetData = db.sheetData[id];
+  async updateSheetDataCell(sheetId, rowId, columnId, value) {
+    const sheetData = db.sheetData[sheetId];
 
     if (!sheetData) {
       return { error: "Sheet not found", ok: false };
@@ -39,8 +41,20 @@ export const memoryDb: DBInterface = {
   },
 
   // Column
-  async updateColumn(id, columnId, payload) {
-    const sheetData = db.sheetData[id];
+  async addColumn(sheetId, columnId, title, type) {
+    const sheetData = db.sheetData[sheetId];
+    if (!sheetData) {
+      return Err("Sheet not found");
+    }
+    const res = migration.addColumn(sheetData, { id: columnId, title, type });
+    if (!res.ok) {
+      return Err(res.error);
+    }
+    db.sheetData[sheetId] = res.value;
+    return Ok();
+  },
+  async updateColumn(sheetId, columnId, payload) {
+    const sheetData = db.sheetData[sheetId];
     if (!sheetData) {
       return Err("Sheet not found");
     }
@@ -48,11 +62,11 @@ export const memoryDb: DBInterface = {
     if (!res.ok) {
       return Err(res.error);
     }
-    db.sheetData[id] = res.value;
+    db.sheetData[sheetId] = res.value;
     return Ok();
   },
-  async updateColumnBatched(id, columnId, payloads) {
-    let sheetData = db.sheetData[id];
+  async updateColumnBatched(sheetId, columnId, payloads) {
+    let sheetData = db.sheetData[sheetId];
     if (!sheetData) {
       return Err("Sheet not found");
     }
@@ -65,7 +79,7 @@ export const memoryDb: DBInterface = {
       sheetData = res.value;
     }
 
-    db.sheetData[id] = sheetData;
+    db.sheetData[sheetId] = sheetData;
     return Ok();
   },
 };
@@ -141,3 +155,22 @@ const db: {
     },
   },
 };
+
+// DEBUGGING OUT
+
+const DEBUG_DB_PATH = resolve(process.cwd(), "debug_db.json");
+
+async function dumpDbToFile() {
+  try {
+    await writeFile(DEBUG_DB_PATH, JSON.stringify(db, null, 2), "utf-8");
+  } catch (err) {
+    console.error("Failed to write debug DB file:", err);
+  }
+}
+
+// Dump every 2 seconds
+if (process.env.NODE_ENV !== "production") {
+  setInterval(() => {
+    dumpDbToFile();
+  }, 2000);
+}

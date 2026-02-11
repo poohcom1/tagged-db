@@ -1,5 +1,5 @@
 import { Err, Ok, Result } from "./result";
-import type { ColumnType, ColumnValue, SheetData } from "./sheets";
+import type { Column, ColumnType, ColumnValue, SheetData } from "./sheets";
 import {
   parseTags,
   validateOptionsReorder,
@@ -30,25 +30,18 @@ export function updateTagCache(sheetData: SheetData): SheetData["tagCache"] {
 }
 
 // Column
-
 export enum ColumnEditType {
   Rename,
   ChangeType,
   Delete,
-  EnumAdd,
-  EnumRemove,
-  EnumRename,
-  EnumReorder,
+  EnumUpdate,
 }
 
 export type ColumnEditAction =
   | ColumnRenameAction
   | ColumnChangeTypeAction
   | ColumnDeleteAction
-  | ColumnEnumAdd
-  | ColumnEnumRemove
-  | ColumnEnumRename
-  | ColumnEnumReorder;
+  | ColumnEnumUpdateAction;
 
 interface BaseColumnAction {
   editType: ColumnEditType;
@@ -68,24 +61,8 @@ interface ColumnDeleteAction extends BaseColumnAction {
   editType: ColumnEditType.Delete;
 }
 
-interface ColumnEnumAdd extends BaseColumnAction {
-  editType: ColumnEditType.EnumAdd;
-  value: string;
-}
-
-interface ColumnEnumRemove extends BaseColumnAction {
-  editType: ColumnEditType.EnumRemove;
-  value: string;
-}
-
-interface ColumnEnumRename extends BaseColumnAction {
-  editType: ColumnEditType.EnumRename;
-  value: string;
-  newValue: string;
-}
-
-interface ColumnEnumReorder extends BaseColumnAction {
-  editType: ColumnEditType.EnumReorder;
+interface ColumnEnumUpdateAction extends BaseColumnAction {
+  editType: ColumnEditType.EnumUpdate;
   values: string[];
 }
 
@@ -98,7 +75,7 @@ export function updateColumn(
 
   const column = columns.find((column) => column.id === columnId);
   if (!column) {
-    return Err("Column not found");
+    return Err("Column not found. ID: " + columnId);
   }
 
   switch (payload.editType) {
@@ -130,46 +107,33 @@ export function updateColumn(
     case ColumnEditType.Delete:
       columns.splice(columns.indexOf(column), 1);
       break;
-    case ColumnEditType.EnumAdd:
+    case ColumnEditType.EnumUpdate:
       if (column.type !== "enum") {
         return Err("Column is not an enum");
       }
-
-      column.options?.push(payload.value);
-      break;
-    case ColumnEditType.EnumRemove:
-      if (column.type !== "enum") {
-        return Err("Column is not an enum");
-      }
-      column.options ??= [];
-      column.options = column.options.filter(
-        (value) => value !== payload.value,
-      );
-      break;
-    case ColumnEditType.EnumRename:
-      if (column.type !== "enum") {
-        return Err("Column is not an enum");
-      }
-      column.options ??= [];
-      const index = column.options.indexOf(payload.value);
-      if (index === -1) {
-        return Err("Value not found");
-      }
-      column.options[index] = payload.newValue;
-      break;
-    case ColumnEditType.EnumReorder:
-      if (column.type !== "enum") {
-        return Err("Column is not an enum");
-      }
-      if (validateOptionsReorder(payload.values, column.options ?? [])) {
-        return Err("Invalid reorder");
-      }
-      column.options ??= [];
       column.options = payload.values;
       break;
   }
 
   return Ok({ ...sheetData, columns });
+}
+
+export function createColumn(
+  columnId: string,
+  title: string = "Untitled column",
+  type: ColumnType = "text",
+): Column {
+  return { id: columnId, title, type, options: [] };
+}
+
+export function addColumn(
+  sheetData: SheetData,
+  column: Column,
+): Result<SheetData> {
+  return Ok({
+    ...sheetData,
+    columns: [...sheetData.columns, column],
+  });
 }
 
 // Column - dropdown

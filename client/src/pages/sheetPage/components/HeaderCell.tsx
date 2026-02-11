@@ -1,6 +1,6 @@
 import { IoSettingsOutline } from "react-icons/io5";
 import styled from "styled-components";
-import { BaseButton } from "../../../components/BaseButton";
+import { BasicButton } from "../../../components/BasicButton";
 
 // Style
 const HeaderContainer = styled.div`
@@ -10,7 +10,8 @@ const HeaderContainer = styled.div`
   font-weight: 600;
 `;
 
-const EditButton = styled(BaseButton)`
+const EditButton = styled(BasicButton)`
+  padding: 4px;
   display: flex;
   align-items: center;
   opacity: 50%;

@@ -3,7 +3,7 @@ import type {
   ColumnEditAction,
   ColumnEditType,
 } from "@app/shared/sheetMigration";
-import type { Sheet, SheetData } from "@app/shared/sheets";
+import type { ColumnType, Sheet, SheetData } from "@app/shared/sheets";
 
 export interface DBInterface {
   // Sheets
@@ -20,13 +20,19 @@ export interface DBInterface {
   ): Promise<Result<void>>;
 
   // Column
+  addColumn(
+    sheetId: string,
+    columnId: string,
+    title: string,
+    type: ColumnType,
+  ): Promise<Result<void>>;
   updateColumn(
-    id: string,
+    sheetId: string,
     columnId: string,
     payload: ColumnEditAction,
   ): Promise<Result<void>>;
   updateColumnBatched(
-    id: string,
+    sheetId: string,
     columnId: string,
     payloads: ColumnEditAction[],
   ): Promise<Result<void>>;
