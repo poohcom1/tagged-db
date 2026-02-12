@@ -34,19 +34,23 @@ export function validateEnums(options: string[]): Result<void> {
   // check all unique
   const unique = new Set(options);
   if (unique.size !== options.length) {
-    return Err("Options must be unique");
+    return Err("Options must be unique.");
   }
   if (options.some((o) => o === "")) {
-    return Err("Options cannot be empty strings");
+    return Err("Options cannot be empty strings.");
   }
   return Ok();
 }
 
-const DEFAULT_TEXT = "Dropdown option #";
+const DEFAULT_TEXT = "Option #";
 export function addDefaultEnum(options: string[]): string[] {
+  return [...options, createDefaultEnum(options)];
+}
+
+export function createDefaultEnum(options: string[]): string {
   let i = 1;
   while (options.includes(DEFAULT_TEXT + i)) {
     i += 1;
   }
-  return [...options, DEFAULT_TEXT + i];
+  return DEFAULT_TEXT + i;
 }

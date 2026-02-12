@@ -138,6 +138,10 @@ export const SheetPage = () => {
     columnId: string,
     actions: migrator.ColumnEditAction[],
   ) => {
+    if (actions.length === 0) {
+      return;
+    }
+
     let updatedSheetData = sheetData;
     for (const action of actions) {
       const columnUpdateResult = migrator.updateColumn(

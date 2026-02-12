@@ -181,7 +181,6 @@ async function fetchEndpoint<E extends Endpoint<unknown, unknown, unknown>>(
 ): Promise<Response> {
   startRequest();
   try {
-    console.log(JSON.stringify(body));
     const res = await fetch(buildUrl(endpoint, params), {
       method: endpoint.method,
       headers: body

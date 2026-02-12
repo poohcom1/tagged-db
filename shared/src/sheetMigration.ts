@@ -80,7 +80,10 @@ interface ColumnDeleteAction extends BaseColumnAction {
 
 interface ColumnEnumUpdateAction extends BaseColumnAction {
   editType: ColumnEditType.EnumUpdate;
-  values: string[];
+
+  // ID = original values
+  idOrder: string[];
+  idToNames: Record<string, string>;
 }
 
 export function updateColumn(
@@ -128,7 +131,24 @@ export function updateColumn(
       if (column.type !== "enum") {
         return Err("Column is not an enum");
       }
-      column.options = payload.values;
+
+      const { idOrder, idToNames } = payload;
+      const updatedOptions = idOrder
+        .map((id) => idToNames[id])
+        .filter(Boolean) as string[];
+
+      // Refactor rows
+      for (const row of sheetData.rows) {
+        const value = row.values[columnId];
+        if (!value) {
+          continue;
+        }
+        if (value in idToNames) {
+          row.values[columnId] = idToNames[value];
+        }
+      }
+
+      column.options = updatedOptions;
       break;
   }
 

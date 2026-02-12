@@ -1,6 +1,6 @@
 import { ColumnEditAction, ColumnEditType } from "@app/shared/sheetMigration";
 import { Column, ColumnType, SheetData } from "@app/shared/sheets";
-import { addDefaultEnum, validateEnums } from "@app/shared/sheetValidation";
+import { createDefaultEnum, validateEnums } from "@app/shared/sheetValidation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { EditModalContainer } from "../../../components/EditModalContainer";
@@ -60,7 +60,10 @@ export const ColumnEdit = ({
   const actions = useRef<Partial<Record<ColumnEditType, ColumnEditAction>>>({});
   const currentColumnId = useRef<string | null>(null);
   // Enum States
-  const [enumOptions, setEnumOptions] = useState<string[]>([]);
+  const [enumState, setEnumState] = useState<{
+    idOrder: string[];
+    idToNames: Record<string, string>;
+  }>({ idOrder: [], idToNames: {} });
 
   useEffect(() => {
     if (columnId !== currentColumnId.current) {
@@ -68,7 +71,11 @@ export const ColumnEdit = ({
       setColumn(sheetData.columns.find((c) => c.id === columnId));
       actions.current = {};
       if (column && "options" in column) {
-        setEnumOptions(column?.options || []);
+        const enumIdMap: Record<string, string> = {};
+        for (const option of column.options ?? []) {
+          enumIdMap[option] = option;
+        }
+        setEnumState({ idOrder: column?.options || [], idToNames: enumIdMap });
       }
     }
   }, [column, columnId, sheetData.columns]);
@@ -81,19 +88,22 @@ export const ColumnEdit = ({
       actionArr.push(action);
     }
     if (column.type === "enum") {
-      const res = validateEnums(enumOptions);
+      const res = validateEnums(
+        enumState.idOrder.map((o) => enumState.idToNames[o]),
+      );
       if (!res.ok) {
         alert(res.error);
         return;
       }
       actionArr.push({
         editType: ColumnEditType.EnumUpdate,
-        values: enumOptions,
+        ...enumState,
       });
+      console.log(actionArr[actionArr.length - 1]);
     }
     onCommit?.(actionArr);
     actions.current = {};
-  }, [column, enumOptions, onCommit]);
+  }, [column, enumState, onCommit]);
 
   let AdvancedEdit = null;
   switch (column?.type) {
@@ -135,24 +145,32 @@ export const ColumnEdit = ({
     case "enum":
       AdvancedEdit = (
         <>
-          {enumOptions.map((option, index) => (
+          {enumState.idOrder.map((id, index) => (
             <EditRow key={index} label={`Option ${index + 1}`}>
               <div style={{ display: "flex", gap: 4 }}>
                 <input
                   type="text"
-                  value={option}
+                  value={enumState.idToNames[id]}
                   onChange={(e) =>
-                    setEnumOptions((o) => {
-                      o[index] = e.target.value;
-                      return [...o];
-                    })
+                    setEnumState((o) => ({
+                      ...o,
+                      idToNames: { ...o.idToNames, [id]: e.target.value },
+                    }))
                   }
                 />
                 <button
                   type="button"
-                  onClick={() =>
-                    setEnumOptions((o) => o.filter((_, i) => i !== index))
-                  }
+                  onClick={() => {
+                    setEnumState((o) => {
+                      const updatedOrder = o.idOrder.filter((i) => i !== id);
+                      const updatedMap = { ...o.idToNames };
+                      delete updatedMap[id];
+                      return {
+                        idOrder: updatedOrder,
+                        idToNames: updatedMap,
+                      };
+                    });
+                  }}
                 >
                   ×
                 </button>
@@ -160,13 +178,13 @@ export const ColumnEdit = ({
                   type="button"
                   disabled={index === 0}
                   onClick={() =>
-                    setEnumOptions((o) => {
-                      const copy = [...o];
+                    setEnumState((o) => {
+                      const copy = [...o.idOrder];
                       [copy[index - 1], copy[index]] = [
                         copy[index],
                         copy[index - 1],
                       ];
-                      return copy;
+                      return { ...o, idOrder: copy };
                     })
                   }
                 >
@@ -175,15 +193,15 @@ export const ColumnEdit = ({
 
                 <button
                   type="button"
-                  disabled={index === enumOptions.length - 1}
+                  disabled={index === enumState.idOrder.length - 1}
                   onClick={() =>
-                    setEnumOptions((o) => {
-                      const copy = [...o];
+                    setEnumState((o) => {
+                      const copy = [...o.idOrder];
                       [copy[index + 1], copy[index]] = [
                         copy[index],
                         copy[index + 1],
                       ];
-                      return copy;
+                      return { ...o, idOrder: copy };
                     })
                   }
                 >
@@ -195,7 +213,21 @@ export const ColumnEdit = ({
           <EditRow label="">
             <button
               type="button"
-              onClick={() => setEnumOptions((o) => addDefaultEnum(o))}
+              onClick={() => {
+                setEnumState((o) => {
+                  const newName = createDefaultEnum(
+                    o.idOrder.map((e) => o.idToNames[e]),
+                  );
+                  const id = crypto.randomUUID();
+                  return {
+                    idOrder: [...o.idOrder, id],
+                    idToNames: {
+                      ...o.idToNames,
+                      [id]: newName,
+                    },
+                  };
+                });
+              }}
             >
               + Add option
             </button>
