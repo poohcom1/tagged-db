@@ -27,7 +27,6 @@ import {
 } from "@app/shared/endpoints";
 import { unwrapOrThrow } from "@app/shared/result";
 import { errorToString } from "@app/shared/util";
-import cors from "@fastify/cors";
 
 const server = Fastify({
   logger: true,
