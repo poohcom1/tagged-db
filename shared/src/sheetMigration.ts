@@ -153,7 +153,20 @@ export function addColumn(
   });
 }
 
-// Column - dropdown
+// Row
+export function addRow(
+  sheetData: SheetData,
+  id: string,
+): Result<SheetData["rows"]> {
+  return Ok([...sheetData.rows, { id, values: {} }]);
+}
+
+export function deleteRow(
+  sheetData: SheetData,
+  id: string,
+): Result<SheetData["rows"]> {
+  return Ok(sheetData.rows.filter((row) => row.id !== id));
+}
 
 // Cell
 export function updateCell(

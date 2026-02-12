@@ -8,11 +8,12 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "start": "node src/index.js",
-    "dev": "nodemon --exec tsx ./src/server.ts"
+    "dev": "nodemon --exec tsx ./src/server.ts",
+    "type-check": "tsc --noEmit",
+    "type-check:watch": "tsc --noEmit --watch"
   },
   "dependencies": {
     "@app/shared": "file:../shared",
-    "@fastify/cors": "^9.0.0",
     "@fastify/static": "^7.0.4",
     "fastify": "^4.26.0"
   },

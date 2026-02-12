@@ -50,7 +50,7 @@ const Item = styled.div<{ active: boolean }>`
 
 interface Props {
   onChange?: (value: string) => void;
-  value: string;
+  value?: string;
   rowId: string;
   columnId: string;
   tags: string[];
@@ -62,7 +62,7 @@ export const TagEdit = ({ value, onChange, tags: suggestions }: Props) => {
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
-    setInput(value);
+    setInput(value ?? "");
   }, [value]);
 
   const { prefix, lastToken } = useMemo(() => {

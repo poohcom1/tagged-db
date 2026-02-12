@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import styled from "styled-components";
 import { FaFileCsv } from "react-icons/fa6";
 import { PiFoldersLight } from "react-icons/pi";
 import { BasicButton } from "../../components/BasicButton";
-import * as api from "../../lib/api";
+import { storageBackend } from "../../lib/storageBackend";
 
 interface Sheet {
   id: string;
@@ -142,12 +142,8 @@ export const MySheetsPage = () => {
   const [selectedSheet, setSelectedSheet] = useState<string>("");
   const [creatingSheet, setCreatingSheet] = useState<string>("");
 
-  useEffect(() => {
-    document.title = "My Sheets | TaggedDB";
-  }, []);
-
   const fetchSheets = () => {
-    api.getSheetsMeta().then((res) => {
+    storageBackend.getSheets().then((res) => {
       if (res.ok) {
         setSheets(res.value);
       } else {
@@ -158,7 +154,7 @@ export const MySheetsPage = () => {
 
   useEffect(fetchSheets, []);
 
-  const onCreateSheet = () => {
+  const onCreateSheet = useCallback(() => {
     const title = prompt("Enter sheet title:");
     if (!title) return;
 
@@ -168,19 +164,18 @@ export const MySheetsPage = () => {
     }
 
     setCreatingSheet(title);
-    api.createSheet(title).then((res) => {
+    storageBackend.createSheet(title).then((res) => {
       setCreatingSheet("");
       if (res.ok) {
         setSheets([...sheets, res.value]);
-        setSelectedSheet(res.value.id);
       } else {
         alert(res.error);
         fetchSheets();
       }
     });
-  };
+  }, [sheets]);
 
-  const onRenameSheet = () => {
+  const onRenameSheet = useCallback(() => {
     if (!selectedSheet) {
       return;
     }
@@ -197,15 +192,15 @@ export const MySheetsPage = () => {
     sheet.name = title;
     setSheets([...sheets]);
 
-    api.renameSheet(selectedSheet, title).then((res) => {
+    storageBackend.renameSheet(selectedSheet, title).then((res) => {
       if (!res.ok) {
         alert(res.error);
         fetchSheets();
       }
     });
-  };
+  }, [sheets, selectedSheet]);
 
-  const onDeleteSheet = () => {
+  const onDeleteSheet = useCallback(() => {
     if (!selectedSheet) {
       return;
     }
@@ -217,7 +212,7 @@ export const MySheetsPage = () => {
     }
 
     if (confirm(`Are you sure you want to delete "${sheet.name}"?`)) {
-      api.deleteSheet(selectedSheet).then((res) => {
+      storageBackend.deleteSheet(selectedSheet).then((res) => {
         if (res.ok) {
           setSheets(sheets.filter((sheet) => sheet.id !== selectedSheet));
         } else {
@@ -226,10 +221,38 @@ export const MySheetsPage = () => {
         }
       });
     }
-  };
+  }, [sheets, selectedSheet]);
+
+  const onOpenSheet = useCallback(() => {
+    if (!selectedSheet) {
+      return;
+    }
+
+    window.open(`/sheet/${selectedSheet}`);
+  }, [selectedSheet]);
+
+  useEffect(() => {
+    document.title = "My Sheets | TaggedDB";
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setSelectedSheet("");
+      } else if (e.key === "n") {
+        onCreateSheet();
+      } else if (e.key === "r") {
+        onRenameSheet();
+      } else if (e.key === "d") {
+        onDeleteSheet();
+      } else if (e.key === "o") {
+        onOpenSheet();
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [onCreateSheet, onDeleteSheet, onOpenSheet, onRenameSheet]);
 
   return (
-    <Background>
+    <Background onClick={() => setSelectedSheet("")}>
       <FolderContainer>
         <FolderHeader>
           <PiFoldersLight /> My Sheets
@@ -238,7 +261,10 @@ export const MySheetsPage = () => {
           <FolderButton onClick={onCreateSheet} disabled={!!creatingSheet}>
             <u>N</u>ew
           </FolderButton>
-          <VSep />
+          <VSep />{" "}
+          <FolderButton onClick={onOpenSheet} disabled={!selectedSheet}>
+            <u>O</u>pen
+          </FolderButton>
           <FolderButton onClick={onRenameSheet} disabled={!selectedSheet}>
             <u>R</u>ename
           </FolderButton>
@@ -247,7 +273,7 @@ export const MySheetsPage = () => {
           </FolderButton>
         </ButtonContainer>
         <HSep />
-        <FilesContainer onClick={() => setSelectedSheet("")}>
+        <FilesContainer>
           <Columns>
             <div>Name</div>
             <div>Updated</div>

@@ -49,5 +49,5 @@ export type ColumnValue = string;
 
 interface Row {
   id: string;
-  values: Record<ColumnId, ColumnValue>;
+  values: Partial<Record<ColumnId, ColumnValue>>;
 }

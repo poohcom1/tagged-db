@@ -1,11 +1,27 @@
 import { Err, Ok, Result } from "@app/shared/result";
 import { ColumnEditAction } from "@app/shared/sheetMigration";
 import { ColumnType, SheetData, SheetMeta } from "@app/shared/sheets";
+import { StorageBackend } from "./storageBackend";
+import {
+  ADD_COLUMN,
+  ADD_ROW,
+  BodyOf,
+  buildUrl,
+  CREATE_SHEET,
+  DELETE_SHEET,
+  Endpoint,
+  GET_SHEET_DATA,
+  GET_SHEETS,
+  ParamsOf,
+  RENAME_SHEET,
+  UPDATE_CELL,
+  UPDATE_COLUMN_BATCHED,
+} from "@app/shared/endpoints";
 
 // API
-export async function getSheetsMeta(): Promise<Result<SheetMeta[]>> {
+async function getSheets(): Promise<Result<SheetMeta[]>> {
   try {
-    const res = await trackedFetch("/api/sheets");
+    const res = await fetchEndpoint(GET_SHEETS, undefined, undefined);
     await handleHttpError(res);
     const sheetsMeta = (await res.json()) as SheetMeta[];
     return Ok(sheetsMeta);
@@ -14,28 +30,9 @@ export async function getSheetsMeta(): Promise<Result<SheetMeta[]>> {
   }
 }
 
-export async function renameSheet(sheetId: string, title: string) {
+async function renameSheet(sheetId: string, title: string) {
   try {
-    const res = await trackedFetch(`/api/sheets/${sheetId}`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ title }),
-    });
-    await handleHttpError(res);
-    const sheetMeta = (await res.json()) as SheetMeta;
-    return Ok(sheetMeta);
-  } catch (e) {
-    return Err(handleErrorObject(e));
-  }
-}
-
-export async function deleteSheet(sheetId: string) {
-  try {
-    const res = await trackedFetch(`/api/sheets/${sheetId}`, {
-      method: "DELETE",
-    });
+    const res = await fetchEndpoint(RENAME_SHEET, { sheetId }, { title });
     await handleHttpError(res);
     return Ok();
   } catch (e) {
@@ -43,15 +40,19 @@ export async function deleteSheet(sheetId: string) {
   }
 }
 
-export async function createSheet(title: string): Promise<Result<SheetMeta>> {
+async function deleteSheet(sheetId: string) {
   try {
-    const res = await trackedFetch("/api/sheets", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ title }),
-    });
+    const res = await fetchEndpoint(DELETE_SHEET, { sheetId }, undefined);
+    await handleHttpError(res);
+    return Ok();
+  } catch (e) {
+    return Err(handleErrorObject(e));
+  }
+}
+
+async function createSheet(title: string): Promise<Result<SheetMeta>> {
+  try {
+    const res = await fetchEndpoint(CREATE_SHEET, undefined, { title });
     await handleHttpError(res);
     const sheetMeta = (await res.json()) as SheetMeta;
     return Ok(sheetMeta);
@@ -60,9 +61,9 @@ export async function createSheet(title: string): Promise<Result<SheetMeta>> {
   }
 }
 
-export async function getSheet(sheetId: string): Promise<Result<SheetData>> {
+async function getSheetData(sheetId: string): Promise<Result<SheetData>> {
   try {
-    const res = await trackedFetch(`/api/sheet-data/${sheetId}`);
+    const res = await fetchEndpoint(GET_SHEET_DATA, { sheetId }, undefined);
     await handleHttpError(res);
     const sheetData = (await res.json()) as SheetData;
     return Ok(sheetData);
@@ -71,20 +72,18 @@ export async function getSheet(sheetId: string): Promise<Result<SheetData>> {
   }
 }
 
-export async function updateCell(
+async function updateCell(
   sheetId: string,
   rowId: string,
   columnId: string,
   value: string,
 ) {
   try {
-    const res = await trackedFetch(`/api/sheet-data/${sheetId}`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ rowId, columnId, value }),
-    });
+    const res = await fetchEndpoint(
+      UPDATE_CELL,
+      { sheetId, rowId, columnId },
+      { value },
+    );
     await handleHttpError(res);
     return Ok();
   } catch (e) {
@@ -92,26 +91,46 @@ export async function updateCell(
   }
 }
 
-export async function createColumn(
+async function createColumn(
   sheetId: string,
   columnId: string,
   columnTitle: string,
   columnType: ColumnType,
 ) {
   try {
-    const res = await trackedFetch(`/api/sheet-data/${sheetId}/column`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ columnId, title: columnTitle, type: columnType }),
-    });
+    const res = await fetchEndpoint(
+      ADD_COLUMN,
+      { sheetId },
+      { columnId, title: columnTitle, type: columnType },
+    );
     await handleHttpError(res);
     return Ok();
   } catch (e) {
     return Err(handleErrorObject(e));
   }
 }
+
+async function createRow(sheetId: string, rowId: string) {
+  try {
+    const res = await fetchEndpoint(ADD_ROW, { sheetId }, { rowId });
+    await handleHttpError(res);
+    return Ok();
+  } catch (e) {
+    return Err(handleErrorObject(e));
+  }
+}
+
+export const apiBackend: StorageBackend = {
+  getSheets,
+  renameSheet,
+  deleteSheet,
+  createSheet,
+  getSheet: getSheetData,
+  updateCell,
+  createColumn,
+  createRow,
+  updateColumnBatched,
+};
 
 export async function updateColumnBatched(
   sheetId: string,
@@ -119,15 +138,10 @@ export async function updateColumnBatched(
   payload: ColumnEditAction[],
 ) {
   try {
-    const res = await trackedFetch(
-      `/api/sheet-data/${sheetId}/column/${columnId}`,
-      {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ payload }),
-      },
+    const res = await fetchEndpoint(
+      UPDATE_COLUMN_BATCHED,
+      { sheetId, columnId },
+      { payload },
     );
     await handleHttpError(res);
     return Ok();
@@ -160,12 +174,30 @@ if (typeof window !== "undefined") {
   });
 }
 
-async function trackedFetch(input: RequestInfo, init?: RequestInit) {
+async function fetchEndpoint<E extends Endpoint<unknown, unknown, unknown>>(
+  endpoint: E,
+  params: ParamsOf<E>,
+  body: BodyOf<E>,
+): Promise<Response> {
   startRequest();
   try {
-    const res = await fetch(input, init);
+    console.log(JSON.stringify(body));
+    const res = await fetch(
+      "http://localhost:3000" + buildUrl(endpoint, params),
+      {
+        method: endpoint.method,
+        headers: body
+          ? {
+              "Content-Type": "application/json",
+            }
+          : undefined,
+        body: JSON.stringify(body),
+      },
+    );
     await handleHttpError(res);
     return res;
+  } catch (e) {
+    throw handleErrorObject(e);
   } finally {
     endRequest();
   }
@@ -184,7 +216,6 @@ async function handleHttpError(res: Response) {
 }
 
 function handleErrorObject(e: unknown): string {
-  console.error(e);
   if (e instanceof Error) {
     return e.message;
   }

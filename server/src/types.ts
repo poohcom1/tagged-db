@@ -8,12 +8,15 @@ import type { ColumnType, SheetMeta, SheetData } from "@app/shared/sheets";
 export interface DBInterface {
   // Sheets
   createSheet(title: string): Promise<Result<SheetMeta>>;
-  renameSheet(id: string, title: string): Promise<Result<SheetMeta>>;
+  renameSheet(id: string, title: string): Promise<Result<void>>;
   deleteSheet(id: string): Promise<Result<void>>;
   getSheets(): Promise<Result<SheetData[]>>;
 
   // Sheet
-  getSheetData(id: string): Promise<SheetData | undefined>;
+  getSheetData(id: string): Promise<Result<SheetData>>;
+
+  // Row
+  addRow(sheetId: string, rowId?: string): Promise<Result<void>>;
   updateSheetDataCell(
     id: string,
     rowId: string,

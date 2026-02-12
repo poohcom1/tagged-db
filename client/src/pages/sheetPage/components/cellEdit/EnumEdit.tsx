@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 interface Props {
   onChange?: (value: string) => void;
-  value: string;
+  value?: string;
 
   options?: string[];
 }

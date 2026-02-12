@@ -1,10 +1,33 @@
-import Fastify from "fastify";
+import Fastify, {
+  type FastifyInstance,
+  type RouteHandlerMethod,
+  type RouteShorthandMethod,
+} from "fastify";
 import fastifyStatic from "@fastify/static";
 import path from "path";
 import type { SheetMeta, SheetData } from "@app/shared/sheets";
 import { memoryDb } from "./db/memoryDb.js";
 import type { ColumnEditAction } from "@app/shared/sheetMigration";
 import { validateType } from "@app/shared/sheetValidation";
+import {
+  ADD_COLUMN,
+  ADD_ROW,
+  CREATE_SHEET,
+  DELETE_SHEET,
+  GET_SHEETS,
+  GET_SHEET_DATA,
+  RENAME_SHEET,
+  UPDATE_CELL,
+  UPDATE_COLUMN_BATCHED,
+  type BodyOf,
+  type Endpoint,
+  type EndpointOf,
+  type ParamsOf,
+  type ReplyOf,
+} from "@app/shared/endpoints";
+import { unwrapOrThrow } from "@app/shared/result";
+import { errorToString } from "@app/shared/util";
+import cors from "@fastify/cors";
 
 const server = Fastify({
   logger: true,
@@ -27,126 +50,114 @@ server.get("/api/ping", async function handler(request, reply) {
   return "pong";
 });
 
+// Endpoints
+
 // My Sheets
 const db = memoryDb;
 
-server.get<{ Reply: SheetMeta[] }>(
-  "/api/sheets",
+server.get<EndpointOf<typeof GET_SHEETS>>(
+  GET_SHEETS.url,
   async function handler(request, reply) {
     const res = await db.getSheets();
-    if (res.ok) {
-      return res.value;
-    } else {
-      return reply.code(500);
-    }
+    return unwrapOrThrow(res);
   },
 );
 
-server.post<{ Body: { title: string }; Reply: SheetMeta | string }>(
-  "/api/sheets",
+server.post<EndpointOf<typeof CREATE_SHEET>>(
+  CREATE_SHEET.url,
   async function handler(request, reply) {
     const res = await db.createSheet(request.body.title);
-    if (res.ok) {
-      return res.value;
-    } else {
-      return reply.code(500).send(res.error);
-    }
+    return unwrapOrThrow(res);
   },
 );
 
-server.patch<{
-  Params: { sheetId: string };
-  Body: { title: string };
-  Reply: SheetMeta | string;
-}>("/api/sheets/:sheetId", async function handler(request, reply) {
-  const res = await db.renameSheet(request.params.sheetId, request.body.title);
-  if (res.ok) {
-    return res.value;
-  } else {
-    return reply.code(500).send(res.error);
-  }
-});
+server.patch<EndpointOf<typeof RENAME_SHEET>>(
+  RENAME_SHEET.url,
+  async function handler(request, reply) {
+    const res = await db.renameSheet(
+      request.params.sheetId,
+      request.body.title,
+    );
+    return unwrapOrThrow(res);
+  },
+);
 
-server.delete<{
-  Params: { sheetId: string };
-  Reply: SheetMeta | string;
-}>("/api/sheets/:sheetId", async function handler(request, reply) {
-  const res = await db.deleteSheet(request.params.sheetId);
-  if (res.ok) {
-    return reply.code(200).send();
-  } else {
-    return reply.code(500).send(res.error);
-  }
-});
+server.delete<EndpointOf<typeof DELETE_SHEET>>(
+  DELETE_SHEET.url,
+  async function handler(request, reply) {
+    const res = await db.deleteSheet(request.params.sheetId);
+    return unwrapOrThrow(res);
+  },
+);
 
 // Sheet
-server.get<{ Params: { sheetId: string }; Reply: SheetData | string }>(
-  "/api/sheet-data/:sheetId",
+server.get<EndpointOf<typeof GET_SHEET_DATA>>(
+  GET_SHEET_DATA.url,
   async function handler(request, reply) {
     const sheetData = await db.getSheetData(request.params.sheetId);
-    if (!sheetData)
-      return reply.code(500).send("Sheet not found: " + request.params.sheetId);
-    return sheetData;
+    return unwrapOrThrow(sheetData);
   },
 );
 
-server.post<{
-  Params: { sheetId: string };
-  Body: { columnId: string; title: string; type: string };
-}>("/api/sheet-data/:sheetId/column", async function handler(request, reply) {
-  if (!validateType(request.body.type))
-    return reply.code(500).send("Invalid column type: " + request.body.type);
+server.post<EndpointOf<typeof ADD_COLUMN>>(
+  ADD_COLUMN.url,
+  async function handler(request, reply) {
+    if (!validateType(request.body.type))
+      return reply.code(500).send("Invalid column type: " + request.body.type);
 
-  const res = await db.addColumn(
-    request.params.sheetId,
-    request.body.columnId,
-    request.body.title,
-    request.body.type,
-  );
-  if (res.ok) {
-    return reply.code(200).send();
-  } else {
-    return reply.code(500).send(res.error);
-  }
-});
+    const res = await db.addColumn(
+      request.params.sheetId,
+      request.body.columnId ?? crypto.randomUUID(),
+      request.body.title,
+      request.body.type,
+    );
+    return unwrapOrThrow(res);
+  },
+);
 
-server.patch<{
-  Params: { sheetId: string };
-  Body: { rowId: string; columnId: string; value: string };
-}>("/api/sheet-data/:sheetId", async function handler(request, reply) {
-  const res = await db.updateSheetDataCell(
-    request.params.sheetId,
-    request.body.rowId,
-    request.body.columnId,
-    request.body.value,
-  );
-  // fake delay 20 s
-  await new Promise((resolve) => setTimeout(resolve, 20000));
-  if (res.ok) {
-    return reply.code(200).send();
-  } else {
-    return reply.code(500).send(res.error);
-  }
-});
+server.post<EndpointOf<typeof ADD_ROW>>(
+  ADD_ROW.url,
+  async function handler(request, reply) {
+    const res = await db.addRow(request.params.sheetId, request.body.rowId);
+    return unwrapOrThrow(res);
+  },
+);
 
-server.patch<{
-  Body: { payload: ColumnEditAction[] };
-  Params: { sheetId: string; columnId: string };
-}>(
-  "/api/sheet-data/:sheetId/column/:columnId",
+server.patch<EndpointOf<typeof UPDATE_CELL>>(
+  UPDATE_CELL.url,
+  async function handler(request, reply) {
+    const res = await db.updateSheetDataCell(
+      request.params.sheetId,
+      request.params.rowId,
+      request.params.columnId,
+      request.body.value,
+    );
+    return unwrapOrThrow(res);
+  },
+);
+
+server.patch<EndpointOf<typeof UPDATE_COLUMN_BATCHED>>(
+  UPDATE_COLUMN_BATCHED.url,
   async function handler(request, reply) {
     const res = await db.updateColumnBatched(
       request.params.sheetId,
       request.params.columnId,
       request.body.payload,
     );
-    if (res.ok) {
-      return reply.code(200).send();
-    } else {
-      return reply.code(500).send(res.error);
-    }
+    return unwrapOrThrow(res);
   },
 );
+
+// Error
+server.addHook("onRequest", async (req) => {
+  console.log("[INCOMING]:", req.method, req.url);
+});
+
+server.setErrorHandler((error, request, reply) => {
+  const message = errorToString(error);
+  console.error("Fastify error", message);
+  reply.code(500).type("text/plain").send(message);
+});
 
 // Run the server!
 try {

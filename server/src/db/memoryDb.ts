@@ -1,6 +1,6 @@
 import * as migration from "@app/shared/sheetMigration";
 import type { DBInterface } from "../types.js";
-import { Err, Ok } from "@app/shared/result";
+import { Err, Ok, Result } from "@app/shared/result";
 import { type SheetMeta, type SheetData } from "@app/shared/sheets";
 import { resolve } from "path";
 import { writeFile } from "fs/promises";
@@ -33,9 +33,24 @@ export const memoryDb: DBInterface = {
     return Ok(Object.values(db.sheetData));
   },
   async getSheetData(sheetId: string) {
-    return db.sheetData[sheetId];
+    return Result(db.sheetData[sheetId], "Sheet not found: " + sheetId);
   },
 
+  async addRow(sheetId, rowId) {
+    const sheetData = db.sheetData[sheetId];
+    if (!sheetData) {
+      return Err("Sheet not found");
+    }
+    const res = migration.addRow(sheetData, rowId ?? crypto.randomUUID());
+    if (!res.ok) {
+      return Err(res.error);
+    }
+    db.sheetData[sheetId] = migration.updateTimestamp({
+      ...sheetData,
+      rows: res.value,
+    });
+    return Ok();
+  },
   async updateSheetDataCell(sheetId, rowId, columnId, value) {
     const sheetData = db.sheetData[sheetId];
 

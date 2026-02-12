@@ -1,24 +1,16 @@
 import { useEffect, useState } from "react";
 import styled from "styled-components";
-import { BaseButton } from "../../../../components/BaseButton";
+import { EditButton } from "../../../../components/EditButton";
 
 const Text = styled.span`
   padding: 8px 12px;
   font-weight: 600;
 `;
 
-const EditButton = styled(BaseButton)`
-  font-size: smaller;
-  &:hover {
-    text-decoration: underline;
-  }
-  color: #5383a1;
-`;
-
 interface Props {
   onChange?: (value: string) => void;
   onCancel?: () => void;
-  value: string;
+  value?: string;
   min?: number;
   max?: number;
   step?: number;
@@ -43,7 +35,7 @@ export const NumberEdit = ({ value, onChange, min, max, step }: Props) => {
         autoFocus
         onKeyDown={(e) => {
           if (e.key === "Enter") {
-            onChange?.(currentValue);
+            onChange?.(currentValue ?? "");
             setEditting(false);
           } else if (e.key === "Escape") {
             setEditting(false);
@@ -53,7 +45,7 @@ export const NumberEdit = ({ value, onChange, min, max, step }: Props) => {
           setCurrentValue(e.target.value);
         }}
         onBlur={() => {
-          onChange?.(currentValue);
+          onChange?.(currentValue ?? "");
           setEditting(false);
         }}
       />

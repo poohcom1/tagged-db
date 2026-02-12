@@ -16,7 +16,7 @@ const Container = styled.div`
 interface Prop {
   rowId: string;
   columnInfo: Column;
-  value: ColumnValue;
+  value?: ColumnValue;
   tagSuggestions?: string[];
 
   onCellUpdate?: (rowId: string, column: Column, value: ColumnValue) => void;
