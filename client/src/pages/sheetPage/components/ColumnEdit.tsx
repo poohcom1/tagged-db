@@ -59,6 +59,8 @@ export const ColumnEdit = ({
 
   const actions = useRef<Partial<Record<ColumnEditType, ColumnEditAction>>>({});
   const currentColumnId = useRef<string | null>(null);
+  const enumAdded = useRef(false);
+
   // Enum States
   const [enumState, setEnumState] = useState<{
     idOrder: string[];
@@ -77,6 +79,7 @@ export const ColumnEdit = ({
         }
         setEnumState({ idOrder: column?.options || [], idToNames: enumIdMap });
       }
+      enumAdded.current = false;
     }
   }, [column, columnId, sheetData.columns]);
 
@@ -110,131 +113,123 @@ export const ColumnEdit = ({
     case "text":
       break;
     case "number":
-      AdvancedEdit = (
-        <>
-          <EditRow label="Max">
-            <input
-              type="number"
-              id="max"
-              name="max"
-              placeholder="Leave empty for none"
-              defaultValue={column.max}
-            />
-          </EditRow>
-          <EditRow label="Min">
-            <input
-              type="number"
-              id="min"
-              name="min"
-              placeholder="Leave empty for none"
-              defaultValue={column.min}
-            />
-          </EditRow>
-          <EditRow label="Step">
-            <input
-              type="number"
-              id="step"
-              name="step"
-              placeholder="Leave empty for none"
-              defaultValue={column.step}
-            />
-          </EditRow>
-        </>
-      );
+      AdvancedEdit = null;
+      // <>
+      //   <EditRow label="Max">
+      //     <input
+      //       type="number"
+      //       id="max"
+      //       name="max"
+      //       placeholder="Leave empty for none"
+      //       defaultValue={column.max}
+      //     />
+      //   </EditRow>
+      //   <EditRow label="Min">
+      //     <input
+      //       type="number"
+      //       id="min"
+      //       name="min"
+      //       placeholder="Leave empty for none"
+      //       defaultValue={column.min}
+      //     />
+      //   </EditRow>
+      //   <EditRow label="Step">
+      //     <input
+      //       type="number"
+      //       id="step"
+      //       name="step"
+      //       placeholder="Leave empty for none"
+      //       defaultValue={column.step}
+      //     />
+      //   </EditRow>
+      // </>
       break;
-    case "enum":
+    case "enum": {
+      const onEnumRenamed = (id: string, name: string) =>
+        setEnumState((o) => ({
+          ...o,
+          idToNames: { ...o.idToNames, [id]: name },
+        }));
+      const onEnumMovedUp = (index: number) =>
+        setEnumState((o) => {
+          const copy = [...o.idOrder];
+          [copy[index - 1], copy[index]] = [copy[index], copy[index - 1]];
+          return { ...o, idOrder: copy };
+        });
+      const onEnumMovedDown = (index: number) =>
+        setEnumState((o) => {
+          const copy = [...o.idOrder];
+          [copy[index + 1], copy[index]] = [copy[index], copy[index + 1]];
+          return { ...o, idOrder: copy };
+        });
+      const onEnumDeleted = (id: string) =>
+        setEnumState((o) => {
+          const updatedOrder = o.idOrder.filter((i) => i !== id);
+          const updatedMap = { ...o.idToNames };
+          delete updatedMap[id];
+          return {
+            idOrder: updatedOrder,
+            idToNames: updatedMap,
+          };
+        });
+      const onEnumAdded = () => {
+        enumAdded.current = true;
+        setEnumState((o) => {
+          const newName = createDefaultEnum(
+            o.idOrder.map((e) => o.idToNames[e]),
+          );
+          const id = crypto.randomUUID();
+          return {
+            idOrder: [...o.idOrder, id],
+            idToNames: {
+              ...o.idToNames,
+              [id]: newName,
+            },
+          };
+        });
+      };
       AdvancedEdit = (
         <>
           {enumState.idOrder.map((id, index) => (
             <EditRow key={index} label={`Option ${index + 1}`}>
               <div style={{ display: "flex", gap: 4 }}>
                 <input
+                  autoFocus={
+                    enumAdded.current && index === enumState.idOrder.length - 1
+                  }
                   type="text"
                   value={enumState.idToNames[id]}
-                  onChange={(e) =>
-                    setEnumState((o) => ({
-                      ...o,
-                      idToNames: { ...o.idToNames, [id]: e.target.value },
-                    }))
-                  }
+                  onChange={(e) => onEnumRenamed(id, e.target.value)}
                 />
                 <button
                   type="button"
-                  onClick={() => {
-                    setEnumState((o) => {
-                      const updatedOrder = o.idOrder.filter((i) => i !== id);
-                      const updatedMap = { ...o.idToNames };
-                      delete updatedMap[id];
-                      return {
-                        idOrder: updatedOrder,
-                        idToNames: updatedMap,
-                      };
-                    });
-                  }}
-                >
-                  ×
-                </button>
-                <button
-                  type="button"
                   disabled={index === 0}
-                  onClick={() =>
-                    setEnumState((o) => {
-                      const copy = [...o.idOrder];
-                      [copy[index - 1], copy[index]] = [
-                        copy[index],
-                        copy[index - 1],
-                      ];
-                      return { ...o, idOrder: copy };
-                    })
-                  }
+                  onClick={() => onEnumMovedUp(index)}
                 >
                   ↑
                 </button>
-
                 <button
                   type="button"
                   disabled={index === enumState.idOrder.length - 1}
-                  onClick={() =>
-                    setEnumState((o) => {
-                      const copy = [...o.idOrder];
-                      [copy[index + 1], copy[index]] = [
-                        copy[index],
-                        copy[index + 1],
-                      ];
-                      return { ...o, idOrder: copy };
-                    })
-                  }
+                  onClick={() => onEnumMovedDown(index)}
                 >
                   ↓
+                </button>
+                <button type="button" onClick={() => onEnumDeleted(id)}>
+                  ×
                 </button>
               </div>
             </EditRow>
           ))}
           <EditRow label="">
-            <button
-              type="button"
-              onClick={() => {
-                setEnumState((o) => {
-                  const newName = createDefaultEnum(
-                    o.idOrder.map((e) => o.idToNames[e]),
-                  );
-                  const id = crypto.randomUUID();
-                  return {
-                    idOrder: [...o.idOrder, id],
-                    idToNames: {
-                      ...o.idToNames,
-                      [id]: newName,
-                    },
-                  };
-                });
-              }}
-            >
+            <button type="button" onClick={() => onEnumAdded()}>
               + Add option
             </button>
           </EditRow>
         </>
       );
       break;
+    }
   }
 
   if (!columnId) {
