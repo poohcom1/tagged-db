@@ -114,7 +114,9 @@ export function updateColumn(
           break;
         case "number":
           for (const row of sheetData.rows) {
-            row.values[columnId] = String(Number(row.values[columnId]));
+            const toNum = Number(row.values[columnId]);
+
+            row.values[columnId] = Number.isNaN(toNum) ? "" : String(toNum);
           }
           break;
         case "tags":
