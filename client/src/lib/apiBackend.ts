@@ -182,18 +182,15 @@ async function fetchEndpoint<E extends Endpoint<unknown, unknown, unknown>>(
   startRequest();
   try {
     console.log(JSON.stringify(body));
-    const res = await fetch(
-      "http://localhost:3000" + buildUrl(endpoint, params),
-      {
-        method: endpoint.method,
-        headers: body
-          ? {
-              "Content-Type": "application/json",
-            }
-          : undefined,
-        body: JSON.stringify(body),
-      },
-    );
+    const res = await fetch(buildUrl(endpoint, params), {
+      method: endpoint.method,
+      headers: body
+        ? {
+            "Content-Type": "application/json",
+          }
+        : undefined,
+      body: JSON.stringify(body),
+    });
     await handleHttpError(res);
     return res;
   } catch (e) {
