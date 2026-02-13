@@ -18,6 +18,7 @@ const Input = styled.input`
     -webkit-appearance: none;
     margin: 0;
   }
+  min-width: 25px;
 `;
 
 const CustomEditButton = styled(EditButton)`

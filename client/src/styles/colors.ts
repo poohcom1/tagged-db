@@ -7,6 +7,8 @@ export const COLORS = {
   BORDER_HIGHLIGHT: "white",
   BORDER_SHADOW: "black",
 
+  GREY: "#4b3e27",
+
   DARK: "#4e4e4e",
   HEADER: "#000082",
 };

@@ -1,6 +1,6 @@
 import { Column, ColumnValue, SheetData } from "@app/shared/types/sheet";
 import * as migrator from "@app/shared/sheetMigration";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Cell } from "./components/Cell";
 import { Table, Th, Thead, Tbody, HEADER_HEIGHT, Td } from "./components/Table";
 import styled from "styled-components";
@@ -17,6 +17,7 @@ import { FaFileCsv } from "react-icons/fa6";
 import { IoMdClose } from "react-icons/io";
 import { border } from "../../styles/mixins";
 import { DesktopHeader } from "../../components/desktop/DesktopHeader";
+import { BaseButton } from "../../components/BaseButton";
 
 // Styles
 const Background = styled.div`
@@ -110,6 +111,11 @@ const AddRowButton = styled(AddColumnButton)`
 
 // Component Page
 
+interface SortKey {
+  columnId: string;
+  ascOrder: boolean;
+}
+
 export const SheetPage = () => {
   const { storageBackend } = useStorageBackend();
   const sheetId = useParams<{ id: string }>().id ?? "";
@@ -117,6 +123,8 @@ export const SheetPage = () => {
   const [currentEditColumnId, setCurrentEditColumnId] = useState<string | null>(
     null,
   );
+
+  const [sortby, setSortby] = useState<SortKey | null>(null);
 
   useEffect(() => {
     if (sheetData) {
@@ -168,6 +176,29 @@ export const SheetPage = () => {
     },
     [loadSheet, sheetData, sheetId, storageBackend],
   );
+
+  const rows = useMemo(() => {
+    if (!sheetData) return [];
+
+    const sheet = [...sheetData.rows];
+    sheet.sort((a, b) => {
+      if (!sortby) return 0;
+      const aVal = a.values[sortby.columnId] || "";
+      const bVal = b.values[sortby.columnId] || "";
+      const aEmpty = aVal === "";
+      const bEmpty = bVal === "";
+      if (aEmpty && bEmpty) return 0;
+      if (aEmpty) return 1;
+      if (bEmpty) return -1;
+      if (sortby.ascOrder) {
+        return aVal.localeCompare(bVal);
+      } else {
+        return bVal.localeCompare(aVal);
+      }
+    });
+
+    return sheet;
+  }, [sheetData, sortby]);
 
   if (!sheetData) return null;
 
@@ -303,6 +334,37 @@ export const SheetPage = () => {
           </FileHeaderCloseButton>
         </FileHeader>
 
+        {/* Context panel */}
+        <div
+          style={{
+            padding: "4px",
+            color: COLORS.GREY,
+            fontSize: "smaller",
+            fontWeight: 600,
+            display: "flex",
+            alignItems: "center",
+            height: "24px",
+          }}
+        >
+          <BaseButton
+            style={{ marginLeft: "auto" }}
+            onClick={() => setSortby(null)}
+            title="Clear sort"
+          >
+            {sortby ? (
+              <>
+                <span style={{ opacity: 0.7 }}>Sort | </span>
+                <span>
+                  {sheetData.columns.find((c) => c.id === sortby.columnId)
+                    ?.title +
+                    " " +
+                    (sortby.ascOrder ? "↑" : "↓")}
+                </span>
+              </>
+            ) : null}
+          </BaseButton>
+        </div>
+
         <VContainer>
           {/* Table */}
           <Table style={{ flexGrow: 1 }}>
@@ -311,6 +373,24 @@ export const SheetPage = () => {
                 {sheetData?.columns.map((column, ind) => (
                   <Th key={column.id}>
                     <HeaderCell
+                      underline={sortby?.columnId === column.id}
+                      onClick={() => {
+                        if (sortby && sortby.columnId === column.id) {
+                          if (sortby.ascOrder) {
+                            setSortby({
+                              columnId: column.id,
+                              ascOrder: false,
+                            });
+                          } else if (!sortby.ascOrder) {
+                            setSortby(null);
+                          }
+                        } else {
+                          setSortby({
+                            columnId: column.id,
+                            ascOrder: true,
+                          });
+                        }
+                      }}
                       title={column.title}
                       onEdit={() => {
                         console.log("column edit: " + column.id);
@@ -346,7 +426,7 @@ export const SheetPage = () => {
             </Thead>
             <Tbody>
               {/* Rows */}
-              {sheetData.rows.map((row) => (
+              {rows.map((row) => (
                 <tr key={row.id}>
                   {sheetData.columns.map((column) => (
                     <Cell

@@ -18,7 +18,7 @@ const HeaderContainer = styled.div`
   gap: 8px;
 
   font-family: monospace;
-  color: #333333;
+  color: ${COLORS.GREY};
   font-weight: 600;
 `;
 

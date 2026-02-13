@@ -13,6 +13,7 @@ const Container = styled.div`
 
 const Input = styled(BaseInput)`
   padding: 0;
+  min-width: 50px;
 `;
 
 const CustomEditButton = styled(EditButton)`

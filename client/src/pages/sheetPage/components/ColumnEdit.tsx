@@ -61,13 +61,26 @@ export const ColumnEdit = ({
 
   const actions = useRef<Partial<Record<ColumnEditType, ColumnEditAction>>>({});
   const currentColumnId = useRef<string | null>(null);
-  const enumAdded = useRef(false);
 
   // Enum States
   const [enumState, setEnumState] = useState<{
     idOrder: string[];
     idToNames: Record<string, string>;
   }>({ idOrder: [], idToNames: {} });
+
+  // Autoselect latest enum field
+  const inputFieldsRef = useRef<HTMLInputElement[]>([]);
+  const previousEnumCount = useRef(0);
+
+  useEffect(() => {
+    if (
+      column?.type === "enum" &&
+      inputFieldsRef.current.length > previousEnumCount.current
+    ) {
+      inputFieldsRef.current[inputFieldsRef.current.length - 1].select();
+    }
+    previousEnumCount.current = inputFieldsRef.current.length;
+  }, [column?.type, enumState]);
 
   useEffect(() => {
     if (columnId !== currentColumnId.current) {
@@ -81,7 +94,6 @@ export const ColumnEdit = ({
         }
         setEnumState({ idOrder: column?.options || [], idToNames: enumIdMap });
       }
-      enumAdded.current = false;
     }
   }, [column, columnId, sheetData.columns]);
 
@@ -146,7 +158,6 @@ export const ColumnEdit = ({
           };
         });
       const onEnumAdded = () => {
-        enumAdded.current = true;
         setEnumState((o) => {
           const newName = createDefaultEnum(
             o.idOrder.map((e) => o.idToNames[e]),
@@ -167,9 +178,9 @@ export const ColumnEdit = ({
             <EditRow key={index} label={`Option ${index + 1}`}>
               <div style={{ display: "flex", gap: 4 }}>
                 <input
-                  autoFocus={
-                    enumAdded.current && index === enumState.idOrder.length - 1
-                  }
+                  ref={(ref) => {
+                    if (ref) inputFieldsRef.current[index] = ref;
+                  }}
                   type="text"
                   value={enumState.idToNames[id]}
                   onChange={(e) => onEnumRenamed(id, e.target.value)}

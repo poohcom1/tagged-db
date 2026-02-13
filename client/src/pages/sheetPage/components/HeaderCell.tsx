@@ -30,16 +30,16 @@ const ArrowButton = styled(BaseButton)`
   }
 `;
 
-// Component
-interface Props {
-  title: string;
-  onEdit?: () => void;
-  index: number;
-  total: number;
-  onRight?: () => void;
-  onLeft?: () => void;
-}
+export const HeaderButton = styled(EditButton)<{ $underline?: boolean }>`
+  text-decoration: ${({ $underline }) =>
+    $underline ? "underline" : "inherit"};
 
+  &:hover {
+    text-decoration: underline;
+  }
+`;
+
+// Component
 const ArrowLeft = () => (
   <svg
     stroke="currentColor"
@@ -67,17 +67,32 @@ const ArrowRight = () => (
   </svg>
 );
 
+interface Props {
+  title: string;
+  onEdit?: () => void;
+  index: number;
+  total: number;
+  onRight?: () => void;
+  onLeft?: () => void;
+  onClick?: () => void;
+  underline?: boolean;
+}
+
 export const HeaderCell = ({
   title,
+  onClick,
   onEdit,
   onRight,
   onLeft,
   index,
   total,
+  underline,
 }: Props) => {
   return (
     <HeaderContainer>
-      <div>{title}</div>
+      <HeaderButton onClick={onClick} $underline={underline}>
+        {title}
+      </HeaderButton>
       <EditContainer>
         <div style={{ width: "4px" }} />
         <ArrowButton onClick={onLeft} disabled={index === 0}>
@@ -86,7 +101,9 @@ export const HeaderCell = ({
         <ArrowButton onClick={onRight} disabled={index === total - 1}>
           <ArrowRight />
         </ArrowButton>
-        <EditButton onClick={onEdit}>edit</EditButton>
+        <EditButton onClick={onEdit} style={{ fontWeight: "500" }}>
+          edit
+        </EditButton>
       </EditContainer>
     </HeaderContainer>
   );
