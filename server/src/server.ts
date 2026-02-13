@@ -1,6 +1,5 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
-import path from "path";
 import { memoryDb } from "./db/memoryDb.js";
 import {
   CREATE_SHEET,
@@ -19,9 +18,7 @@ const server = Fastify({
 });
 
 // Static
-const __dirname = path.resolve(path.dirname("public"));
-
-await server.register(cors, {
+await server.register(cors as any, {
   origin: "*",
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type"],
@@ -58,7 +55,7 @@ server.patch<EndpointOf<typeof RENAME_SHEET>>(
       request.params.sheetId,
       request.body.title,
     );
-    return unwrapOrThrow(res);
+    unwrapOrThrow(res);
   },
 );
 
@@ -66,7 +63,7 @@ server.delete<EndpointOf<typeof DELETE_SHEET>>(
   DELETE_SHEET.url,
   async function handler(request, reply) {
     const res = await db.deleteSheet(request.params.sheetId);
-    return unwrapOrThrow(res);
+    unwrapOrThrow(res);
   },
 );
 
@@ -86,7 +83,7 @@ server.patch<EndpointOf<typeof UPDATE_SHEET>>(
       request.params.sheetId,
       request.body.action,
     );
-    return unwrapOrThrow(res);
+    unwrapOrThrow(res);
   },
 );
 

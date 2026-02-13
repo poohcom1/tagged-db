@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -15,8 +15,7 @@
   "dependencies": {
     "@app/shared": "file:../shared",
     "@fastify/cors": "^11.2.0",
-    "@fastify/static": "^7.0.4",
-    "fastify": "^4.26.0"
+    "fastify": "^5.7.4"
   },
   "devDependencies": {
     "@types/node": "^20.19.33",
