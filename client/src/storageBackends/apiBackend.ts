@@ -16,8 +16,13 @@ import {
 import { SheetAction } from "@app/shared/types/action";
 
 // API
+export const REMOTE_URL_PARAM = "remote";
 
 export const apiBackend = (baseUrl: string): StorageBackend => ({
+  backendType: "api",
+  url: baseUrl,
+  id: baseUrl,
+  queryParam: `${REMOTE_URL_PARAM}=${encodeURIComponent(baseUrl)}`,
   async getSheets(): Promise<Result<SheetMeta[]>> {
     try {
       const res = await fetchEndpoint(

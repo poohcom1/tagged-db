@@ -6,9 +6,14 @@ interface RemoteBackend {
 
 const LS_KEY_REMOTES = "remotes";
 
-export const useRemoteBackends = () => {
-  const [backends, setBackends] =
-    useState<RemoteBackend[]>(getRemoteBackends());
+const getRemoteBackends = () => {
+  const backendsString = localStorage.getItem(LS_KEY_REMOTES);
+  return backendsString ? (JSON.parse(backendsString) as RemoteBackend[]) : [];
+};
+
+// User set remotes
+export const useUserRemotes = () => {
+  const [remotes, setBackends] = useState<RemoteBackend[]>(getRemoteBackends());
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -20,8 +25,8 @@ export const useRemoteBackends = () => {
 
   // Persist whenever backends change
   useEffect(() => {
-    localStorage.setItem(LS_KEY_REMOTES, JSON.stringify(backends));
-  }, [backends]);
+    localStorage.setItem(LS_KEY_REMOTES, JSON.stringify(remotes));
+  }, [remotes]);
 
   const addRemoteBackend = useCallback((backend: RemoteBackend) => {
     setBackends((prev) => [...prev, backend]);
@@ -32,12 +37,8 @@ export const useRemoteBackends = () => {
   }, []);
 
   return {
-    backends,
-    add: addRemoteBackend,
-    remove: removeRemoteBackend,
+    remotes,
+    addRemote: addRemoteBackend,
+    removeRemote: removeRemoteBackend,
   };
-};
-const getRemoteBackends = () => {
-  const backendsString = localStorage.getItem(LS_KEY_REMOTES);
-  return backendsString ? (JSON.parse(backendsString) as RemoteBackend[]) : [];
 };

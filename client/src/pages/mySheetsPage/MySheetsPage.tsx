@@ -3,7 +3,7 @@ import styled from "styled-components";
 import { FaFileCsv } from "react-icons/fa6";
 import { PiFoldersLight } from "react-icons/pi";
 import { BasicButton } from "../../components/BasicButton";
-import { useRemoteBackends } from "../../storageBackends/useRemoteBackends";
+import { useUserRemotes } from "../../storageBackends/useUserRemotes";
 import { IoMdClose, IoMdAdd } from "react-icons/io";
 import { PiNetworkBold as IconLocal } from "react-icons/pi";
 import {
@@ -11,14 +11,8 @@ import {
   TbNetworkOff as IconNetworkOff,
   TbHourglass as IconProgress,
 } from "react-icons/tb";
+import { useStorageBackend } from "../../storageBackends/useBackend";
 import { localStorageBackend } from "../../storageBackends/localStorageBackend";
-import { apiBackend } from "../../storageBackends/apiBackend";
-import {
-  getCurrentRemoteUrl,
-  REMOTE_URL_PARAM,
-  setCurrentRemote,
-} from "../../storageBackends/storageBackend";
-import { useLocation } from "react-router-dom";
 
 interface Sheet {
   id: string;
@@ -202,10 +196,10 @@ const NameCell = styled.div`
 // Component
 
 export const MySheetsPage = () => {
-  const remoteBackends = useRemoteBackends();
-  const { search } = useLocation();
+  const userRemotes = useUserRemotes();
 
-  const [selectedStorage, setSelectedStorage] = useState<string>(""); // "" = localStorage
+  const { storageBackend, setUseLocalStorage, setUseRemoteBackend } =
+    useStorageBackend();
   const [addingStorage, setAddingStorage] = useState<boolean>(false);
   const [loadingStorages, setLoadingStorages] = useState<string[]>([]);
   const [brokenStorages, setBrokenStorages] = useState<string[]>([]);
@@ -214,52 +208,45 @@ export const MySheetsPage = () => {
     {},
   );
   const sheets = useMemo(
-    () => sheetsMap[selectedStorage],
-    [sheetsMap, selectedStorage],
+    () => sheetsMap[storageBackend.id],
+    [sheetsMap, storageBackend.id],
   );
   const [selectedSheet, setSelectedSheet] = useState<string>("");
   const [creatingSheetMap, setCreatingSheetMap] = useState<
     Partial<Record<string, string>>
   >({});
   const creatingSheet = useMemo(
-    () => creatingSheetMap[selectedStorage],
-    [creatingSheetMap, selectedStorage],
+    () => creatingSheetMap[storageBackend.id],
+    [creatingSheetMap, storageBackend.id],
   );
 
-  useEffect(() => {
-    setSelectedStorage(getCurrentRemoteUrl(search));
-  }, [search]);
-
-  useEffect(() => {
-    setCurrentRemote(selectedStorage);
-  }, [selectedStorage]);
-
-  const storageBackend = useMemo(() => {
-    if (selectedStorage) {
-      return apiBackend(selectedStorage);
-    } else {
-      return localStorageBackend;
-    }
-  }, [selectedStorage]);
-
   const fetchSheets = useCallback(async () => {
-    setLoadingStorages((s) => [...s, selectedStorage]);
-    setBrokenStorages((s) => s.filter((s) => s !== selectedStorage));
+    if (
+      storageBackend.backendType === "api" &&
+      userRemotes.remotes.find((b) => b.url !== storageBackend.id)
+    ) {
+      // Attempting to open remote tab that doesn't exist
+      setUseLocalStorage();
+      return;
+    }
+
+    setLoadingStorages((s) => [...s, storageBackend.id]);
+    setBrokenStorages((s) => s.filter((s) => s !== storageBackend.id));
 
     const res = await storageBackend.getSheets();
 
-    setLoadingStorages((s) => s.filter((s) => s !== selectedStorage));
+    setLoadingStorages((s) => s.filter((s) => s !== storageBackend.id));
     if (res.ok) {
-      setSheetsMap((m) => ({ ...m, [selectedStorage]: res.value }));
+      setSheetsMap((m) => ({ ...m, [storageBackend.id]: res.value }));
       setSelectedSheet("");
-    } else if (remoteBackends.backends.find((b) => b.url === selectedStorage)) {
-      setBrokenStorages((s) => [...s, selectedStorage]);
+    } else if (userRemotes.remotes.find((b) => b.url === storageBackend.id)) {
+      setBrokenStorages((s) => [...s, storageBackend.id]);
       await new Promise((resolve) => setTimeout(resolve, 50));
       alert(
-        `Could not connect to remote: ${selectedStorage}.\n\nReason: ${res.error}`,
+        `Could not connect to remote: ${storageBackend.id}.\n\nReason: ${res.error}`,
       );
     }
-  }, [remoteBackends.backends, selectedStorage, storageBackend]);
+  }, [setUseLocalStorage, storageBackend, userRemotes.remotes]);
 
   useEffect(() => {
     fetchSheets();
@@ -274,15 +261,15 @@ export const MySheetsPage = () => {
       return;
     }
 
-    setCreatingSheetMap((s) => ({ ...s, [selectedStorage]: title }));
+    setCreatingSheetMap((s) => ({ ...s, [storageBackend.id]: title }));
     storageBackend.createSheet(title).then((res) => {
-      setCreatingSheetMap((s) => ({ ...s, [selectedStorage]: undefined }));
+      setCreatingSheetMap((s) => ({ ...s, [storageBackend.id]: undefined }));
       if (res.ok) {
         setSheetsMap((m) => {
-          const storageSheets = m[selectedStorage] || [];
+          const storageSheets = m[storageBackend.id] || [];
           return {
             ...m,
-            [selectedStorage]: [...storageSheets, res.value],
+            [storageBackend.id]: [...storageSheets, res.value],
           };
         });
       } else {
@@ -290,7 +277,7 @@ export const MySheetsPage = () => {
         fetchSheets();
       }
     });
-  }, [fetchSheets, selectedStorage, sheets, storageBackend]);
+  }, [fetchSheets, sheets, storageBackend]);
 
   const onRenameSheet = useCallback(() => {
     if (!selectedSheet) {
@@ -330,10 +317,10 @@ export const MySheetsPage = () => {
 
     if (confirm(`Are you sure you want to delete "${sheet.name}"?`)) {
       setSheetsMap((s) => {
-        const storageSheets = s[selectedStorage] || [];
+        const storageSheets = s[storageBackend.id] || [];
         return {
           ...s,
-          [selectedStorage]: storageSheets.filter(
+          [storageBackend.id]: storageSheets.filter(
             (s) => s.id !== selectedSheet,
           ),
         };
@@ -346,15 +333,15 @@ export const MySheetsPage = () => {
         }
       });
     }
-  }, [selectedSheet, sheets, storageBackend, selectedStorage, fetchSheets]);
+  }, [selectedSheet, sheets, storageBackend, fetchSheets]);
 
   const getUrl = useCallback(() => {
     let url = `/sheet/${selectedSheet}`;
-    if (selectedStorage) {
-      url += `?${REMOTE_URL_PARAM}=${selectedStorage}`;
+    if (storageBackend.queryParam) {
+      url += `?${storageBackend.queryParam}`;
     }
     return url;
-  }, [selectedSheet, selectedStorage]);
+  }, [selectedSheet, storageBackend]);
 
   const onOpenSheet = useCallback(() => {
     if (!selectedSheet) {
@@ -394,8 +381,8 @@ export const MySheetsPage = () => {
             onClick={onCreateSheet}
             disabled={
               !!creatingSheet ||
-              brokenStorages.includes(selectedStorage) ||
-              loadingStorages.includes(selectedStorage)
+              brokenStorages.includes(storageBackend.id) ||
+              loadingStorages.includes(storageBackend.id)
             }
           >
             <u>N</u>ew
@@ -417,18 +404,20 @@ export const MySheetsPage = () => {
           <TabButton
             tabIndex={0}
             key="localStorage"
-            $selected={!selectedStorage && !addingStorage}
-            onClick={() => setSelectedStorage("")}
+            $selected={
+              storageBackend.id === localStorageBackend.id && !addingStorage
+            }
+            onClick={() => setUseLocalStorage()}
           >
             <IconLocal /> localStorage://
           </TabButton>
-          {remoteBackends.backends.map((backend) => (
+          {userRemotes.remotes.map((backend) => (
             <TabButton
               tabIndex={0}
               key={backend.url}
-              $selected={selectedStorage === backend.url && !addingStorage}
+              $selected={storageBackend.id === backend.url && !addingStorage}
               $loading={loadingStorages.includes(backend.url)}
-              onClick={() => setSelectedStorage(backend.url)}
+              onClick={() => setUseRemoteBackend(backend.url)}
               style={{ display: "flex", alignItems: "center", gap: "4px" }}
             >
               {loadingStorages.includes(backend.url) ? (
@@ -442,13 +431,14 @@ export const MySheetsPage = () => {
               <BasicButton
                 style={{ display: "flex", alignItems: "center" }}
                 onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
                   if (!confirm(`Close backend: ${backend.url}?`)) {
                     return;
                   }
-                  e.stopPropagation();
-                  remoteBackends.remove(backend);
+                  userRemotes.removeRemote(backend);
                   setBrokenStorages((s) => s.filter((s) => s !== backend.url));
-                  setSelectedStorage("");
+                  setUseLocalStorage();
                 }}
               >
                 <IoMdClose style={{ marginLeft: "auto" }} />
@@ -464,9 +454,9 @@ export const MySheetsPage = () => {
               setAddingStorage(true);
               await new Promise((resolve) => setTimeout(resolve, 0));
               let url = prompt("Remote backend URL:");
-              if (url && remoteBackends.backends.find((b) => b.url === url)) {
+              if (url && userRemotes.remotes.find((b) => b.url === url)) {
                 alert("Already connected to remote!");
-                setSelectedStorage(url);
+                setUseRemoteBackend(url);
               } else if (
                 url &&
                 (url.startsWith("http://") || url.startsWith("https://"))
@@ -475,10 +465,10 @@ export const MySheetsPage = () => {
                   url = url.slice(0, -1);
                 }
 
-                remoteBackends.add({
+                userRemotes.addRemote({
                   url,
                 });
-                setSelectedStorage(url);
+                setUseRemoteBackend(url);
               } else {
                 if (url) {
                   alert("Invalid URL: " + url);
@@ -527,9 +517,9 @@ export const MySheetsPage = () => {
               </File>
             ))}
 
-            {!creatingSheet && brokenStorages.includes(selectedStorage) ? (
+            {!creatingSheet && brokenStorages.includes(storageBackend.id) ? (
               <FileCreating>
-                Failed to connect to remote: {selectedStorage}
+                Failed to connect to remote: {storageBackend.id}
               </FileCreating>
             ) : (
               sheets?.length === 0 && (
@@ -538,9 +528,9 @@ export const MySheetsPage = () => {
                 </FileCreating>
               )
             )}
-            {loadingStorages.includes(selectedStorage) && (
+            {loadingStorages.includes(storageBackend.id) && (
               <FileCreating>
-                {(sheetsMap[selectedStorage] ?? []).length === 0
+                {(sheetsMap[storageBackend.id] ?? []).length === 0
                   ? "Connecting to remote..."
                   : "Updating remote..."}
               </FileCreating>

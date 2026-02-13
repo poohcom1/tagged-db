@@ -44,7 +44,7 @@ const ArrowLeft = () => (
   <svg
     stroke="currentColor"
     fill="currentColor"
-    stroke-width="0"
+    strokeWidth="0"
     viewBox="0 0 100 512"
     width="1em"
     height="1em"
@@ -57,7 +57,7 @@ const ArrowRight = () => (
   <svg
     stroke="currentColor"
     fill="currentColor"
-    stroke-width="0"
+    strokeWidth="0"
     viewBox="100 0 200 512"
     width="1em"
     height="1em"

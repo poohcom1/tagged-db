@@ -4,14 +4,14 @@ import { useCallback, useEffect, useState } from "react";
 import { Cell } from "./components/Cell";
 import { Table, Th, Thead, Tbody, HEADER_HEIGHT, Td } from "./components/Table";
 import styled from "styled-components";
-import { useLocation, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { IoIosAdd } from "react-icons/io";
 import { HeaderCell } from "./components/HeaderCell";
 import { ColumnEdit } from "./components/ColumnEdit";
 import { BasicButton } from "../../components/BasicButton";
 import { EditButton } from "../../components/EditButton";
 import { ColumnEditAction, SheetAction } from "@app/shared/types/action";
-import { getCurrentRemote } from "../../storageBackends/storageBackend";
+import { useStorageBackend } from "../../storageBackends/useBackend";
 
 // Styles
 const MainContainer = styled.div`
@@ -62,8 +62,7 @@ const AddRowButton = styled(AddColumnButton)`
 // Component Page
 
 export const SheetPage = () => {
-  const { search } = useLocation();
-  const storageBackend = getCurrentRemote(search);
+  const { storageBackend } = useStorageBackend();
   const sheetId = useParams<{ id: string }>().id ?? "";
   const [sheetData, setSheetData] = useState<SheetData | null>(null);
   const [currentEditColumnId, setCurrentEditColumnId] = useState<string | null>(
@@ -80,7 +79,6 @@ export const SheetPage = () => {
 
   const loadSheet = useCallback(async () => {
     const res = await storageBackend.getSheetData(sheetId);
-    console.log(res);
     if (res.ok) {
       setSheetData(res.value);
     } else {

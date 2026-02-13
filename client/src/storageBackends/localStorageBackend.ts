@@ -19,6 +19,9 @@ const removeSheet = (sheetId: string) =>
   localStorage.removeItem(LS_KEY_SHEET(sheetId));
 
 export const localStorageBackend: StorageBackend = {
+  backendType: "local",
+  id: "localStorage",
+  queryParam: "",
   getSheets: async (): Promise<Result<SheetMeta[]>> => {
     const index = getIndex();
     return Ok(index);
