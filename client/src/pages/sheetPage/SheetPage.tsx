@@ -57,7 +57,7 @@ const FileHeaderCloseButton = styled.button`
   margin-left: auto;
 
   background-color: ${COLORS.PANEL};
-  ${border({ thickness: 2 })};
+  ${border({ thickness: 2, isButton: true })};
 
   &:hover {
     cursor: pointer;
