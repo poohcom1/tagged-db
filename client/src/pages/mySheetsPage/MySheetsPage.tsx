@@ -113,6 +113,7 @@ const TabButton = styled.a<{ $selected: boolean; $loading?: boolean }>`
   border-right: 2px solid black;
 
   cursor: ${({ $loading }) => ($loading ? "wait" : "pointer")};
+  user-select: none;
 `;
 
 const FilesContainerOutline = styled.div`
@@ -209,15 +210,21 @@ export const MySheetsPage = () => {
   const [loadingStorages, setLoadingStorages] = useState<string[]>([]);
   const [brokenStorages, setBrokenStorages] = useState<string[]>([]);
 
-  const [sheetsMap, setSheetsMap] = useState<
-    Record<string, Sheet[] | undefined>
-  >({});
+  const [sheetsMap, setSheetsMap] = useState<Partial<Record<string, Sheet[]>>>(
+    {},
+  );
   const sheets = useMemo(
     () => sheetsMap[selectedStorage],
     [sheetsMap, selectedStorage],
   );
   const [selectedSheet, setSelectedSheet] = useState<string>("");
-  const [creatingSheet, setCreatingSheet] = useState<string>("");
+  const [creatingSheetMap, setCreatingSheetMap] = useState<
+    Partial<Record<string, string>>
+  >({});
+  const creatingSheet = useMemo(
+    () => creatingSheetMap[selectedStorage],
+    [creatingSheetMap, selectedStorage],
+  );
 
   useEffect(() => {
     setSelectedStorage(getCurrentRemoteUrl(search));
@@ -238,7 +245,9 @@ export const MySheetsPage = () => {
   const fetchSheets = useCallback(async () => {
     setLoadingStorages((s) => [...s, selectedStorage]);
     setBrokenStorages((s) => s.filter((s) => s !== selectedStorage));
+
     const res = await storageBackend.getSheets();
+
     setLoadingStorages((s) => s.filter((s) => s !== selectedStorage));
     if (res.ok) {
       setSheetsMap((m) => ({ ...m, [selectedStorage]: res.value }));
@@ -247,7 +256,7 @@ export const MySheetsPage = () => {
       setBrokenStorages((s) => [...s, selectedStorage]);
       await new Promise((resolve) => setTimeout(resolve, 50));
       alert(
-        `Failed to connect to remote: ${selectedStorage}.\n\nReason: ${res.error}`,
+        `Could not connect to remote: ${selectedStorage}.\n\nReason: ${res.error}`,
       );
     }
   }, [remoteBackends.backends, selectedStorage, storageBackend]);
@@ -265,9 +274,9 @@ export const MySheetsPage = () => {
       return;
     }
 
-    setCreatingSheet(title);
+    setCreatingSheetMap((s) => ({ ...s, [selectedStorage]: title }));
     storageBackend.createSheet(title).then((res) => {
-      setCreatingSheet("");
+      setCreatingSheetMap((s) => ({ ...s, [selectedStorage]: undefined }));
       if (res.ok) {
         setSheetsMap((m) => {
           const storageSheets = m[selectedStorage] || [];
@@ -381,7 +390,14 @@ export const MySheetsPage = () => {
           <PiFoldersLight /> My Sheets
         </FolderHeader>
         <ButtonContainer>
-          <MenuButton onClick={onCreateSheet} disabled={!!creatingSheet}>
+          <MenuButton
+            onClick={onCreateSheet}
+            disabled={
+              !!creatingSheet ||
+              brokenStorages.includes(selectedStorage) ||
+              loadingStorages.includes(selectedStorage)
+            }
+          >
             <u>N</u>ew
           </MenuButton>
           <VSep />
@@ -510,15 +526,27 @@ export const MySheetsPage = () => {
                 <Time dateTime={sheet.created} />
               </File>
             ))}
+
+            {!creatingSheet && brokenStorages.includes(selectedStorage) ? (
+              <FileCreating>
+                Failed to connect to remote: {selectedStorage}
+              </FileCreating>
+            ) : (
+              sheets?.length === 0 && (
+                <FileCreating>
+                  No sheets found. Select "New" to create one.
+                </FileCreating>
+              )
+            )}
             {loadingStorages.includes(selectedStorage) && (
-              <FileCreating key="_">
+              <FileCreating>
                 {(sheetsMap[selectedStorage] ?? []).length === 0
                   ? "Connecting to remote..."
                   : "Updating remote..."}
               </FileCreating>
             )}
             {creatingSheet && (
-              <FileCreating key="_">Creating "{creatingSheet}"...</FileCreating>
+              <FileCreating>Creating "{creatingSheet}"...</FileCreating>
             )}
           </FilesContainer>
         </FilesContainerOutline>

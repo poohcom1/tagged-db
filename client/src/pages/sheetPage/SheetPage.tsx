@@ -119,7 +119,7 @@ export const SheetPage = () => {
         }
       });
     },
-    [loadSheet, sheetData, sheetId],
+    [loadSheet, sheetData, sheetId, storageBackend],
   );
 
   if (!sheetData) return null;
