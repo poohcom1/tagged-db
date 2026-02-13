@@ -4,14 +4,14 @@ import { useCallback, useEffect, useState } from "react";
 import { Cell } from "./components/Cell";
 import { Table, Th, Thead, Tbody, HEADER_HEIGHT, Td } from "./components/Table";
 import styled from "styled-components";
-import { useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import { IoIosAdd } from "react-icons/io";
 import { HeaderCell } from "./components/HeaderCell";
 import { ColumnEdit } from "./components/ColumnEdit";
-import { storageBackend } from "../../storageBackends/storageBackend";
 import { BasicButton } from "../../components/BasicButton";
 import { EditButton } from "../../components/EditButton";
 import { ColumnEditAction, SheetAction } from "@app/shared/types/action";
+import { getCurrentRemote } from "../../storageBackends/storageBackend";
 
 // Styles
 const MainContainer = styled.div`
@@ -62,6 +62,8 @@ const AddRowButton = styled(AddColumnButton)`
 // Component Page
 
 export const SheetPage = () => {
+  const { search } = useLocation();
+  const storageBackend = getCurrentRemote(search);
   const sheetId = useParams<{ id: string }>().id ?? "";
   const [sheetData, setSheetData] = useState<SheetData | null>(null);
   const [currentEditColumnId, setCurrentEditColumnId] = useState<string | null>(
@@ -84,7 +86,7 @@ export const SheetPage = () => {
     } else {
       alert(res.error);
     }
-  }, [sheetId]);
+  }, [sheetId, storageBackend]);
 
   useEffect(() => {
     loadSheet();

@@ -13,6 +13,12 @@ import {
 } from "react-icons/tb";
 import { localStorageBackend } from "../../storageBackends/localStorageBackend";
 import { apiBackend } from "../../storageBackends/apiBackend";
+import {
+  getCurrentRemoteUrl,
+  REMOTE_URL_PARAM,
+  setCurrentRemote,
+} from "../../storageBackends/storageBackend";
+import { useLocation } from "react-router-dom";
 
 interface Sheet {
   id: string;
@@ -196,6 +202,7 @@ const NameCell = styled.div`
 
 export const MySheetsPage = () => {
   const remoteBackends = useRemoteBackends();
+  const { search } = useLocation();
   const [sheets, setSheets] = useState<Sheet[]>([]);
   const [selectedSheet, setSelectedSheet] = useState<string>("");
   const [creatingSheet, setCreatingSheet] = useState<string>("");
@@ -204,6 +211,14 @@ export const MySheetsPage = () => {
   const [addingStorage, setAddingStorage] = useState<boolean>(false);
   const [loadingStorages, setLoadingStorages] = useState<string[]>([]);
   const [brokenStorages, setBrokenStorages] = useState<string[]>([]);
+
+  useEffect(() => {
+    setSelectedStorage(getCurrentRemoteUrl(search));
+  }, [search]);
+
+  useEffect(() => {
+    setCurrentRemote(selectedStorage);
+  }, [selectedStorage]);
 
   const storageBackend = useMemo(() => {
     if (selectedStorage) {
@@ -304,13 +319,20 @@ export const MySheetsPage = () => {
     }
   }, [selectedSheet, sheets, storageBackend, fetchSheets]);
 
+  const getUrl = useCallback(() => {
+    let url = `/sheet/${selectedSheet}`;
+    if (selectedStorage) {
+      url += `?${REMOTE_URL_PARAM}=${selectedStorage}`;
+    }
+    return url;
+  }, [selectedSheet, selectedStorage]);
+
   const onOpenSheet = useCallback(() => {
     if (!selectedSheet) {
       return;
     }
-
-    window.open(`/sheet/${selectedSheet}`);
-  }, [selectedSheet]);
+    window.open(getUrl());
+  }, [getUrl, selectedSheet]);
 
   useEffect(() => {
     document.title = "My Sheets | TaggedDB";
@@ -446,9 +468,7 @@ export const MySheetsPage = () => {
               <File
                 tabIndex={ind}
                 key={sheet.id}
-                href={
-                  sheet.id === selectedSheet ? `/sheet/${sheet.id}` : undefined
-                }
+                href={sheet.id === selectedSheet ? getUrl() : undefined}
                 onClick={(e) => {
                   e.stopPropagation();
                   if (sheet.id !== selectedSheet) {
