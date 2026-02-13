@@ -86,10 +86,14 @@ const TabsContainer = styled.div`
   gap: 0px;
   background-color: ${COLORS.PANEL};
   padding: 0;
+  overflow-y: scroll;
+  flex-shrink: 0;
 `;
 
 const TabButton = styled.a<{ $selected: boolean; $loading?: boolean }>`
-  padding: 4px 8px;
+  margin-top: 4px;
+  padding: 4px 12px;
+  min-height: 24px;
   padding-bottom: ${({ $selected }) => ($selected ? 8 : 4)}px;
   color: ${({ $selected }) => ($selected ? "black" : "#000000a2")};
   font-weight: ${({ $selected }) => ($selected ? 600 : 500)};
@@ -222,7 +226,7 @@ export const MySheetsPage = () => {
   const fetchSheets = useCallback(async () => {
     if (
       storageBackend.backendType === "api" &&
-      userRemotes.remotes.find((b) => b.url !== storageBackend.id)
+      !userRemotes.remotes.find((b) => b.url === storageBackend.url)
     ) {
       // Attempting to open remote tab that doesn't exist
       setUseLocalStorage();
@@ -241,7 +245,7 @@ export const MySheetsPage = () => {
     } else if (userRemotes.remotes.find((b) => b.url === storageBackend.id)) {
       setBrokenStorages((s) => [...s, storageBackend.id]);
       await new Promise((resolve) => setTimeout(resolve, 50));
-      alert(
+      console.error(
         `Could not connect to remote: ${storageBackend.id}.\n\nReason: ${res.error}`,
       );
     }
@@ -406,6 +410,7 @@ export const MySheetsPage = () => {
 
         <TabsContainer>
           <TabButton
+            title="Local storage"
             tabIndex={0}
             key="localStorage"
             $selected={
@@ -413,7 +418,7 @@ export const MySheetsPage = () => {
             }
             onClick={() => setUseLocalStorage()}
           >
-            <IconLocal /> localstorage:///
+            <IconLocal /> My sheets
           </TabButton>
           {userRemotes.remotes.map((backend) => (
             <TabButton

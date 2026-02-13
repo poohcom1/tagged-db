@@ -4,7 +4,7 @@ interface RemoteBackend {
   url: string;
 }
 
-const LS_KEY_REMOTES = "remotes";
+const LS_KEY_REMOTES = "tagged_db.remotes";
 
 const getRemoteBackends = () => {
   const backendsString = localStorage.getItem(LS_KEY_REMOTES);
@@ -13,13 +13,13 @@ const getRemoteBackends = () => {
 
 // User set remotes
 export const useUserRemotes = () => {
-  const [remotes, setBackends] = useState<RemoteBackend[]>(getRemoteBackends());
+  const [remotes, setRemotes] = useState<RemoteBackend[]>(getRemoteBackends());
 
   // Load from localStorage on mount
   useEffect(() => {
     const backendsString = localStorage.getItem(LS_KEY_REMOTES);
     if (backendsString) {
-      setBackends(JSON.parse(backendsString));
+      setRemotes(JSON.parse(backendsString));
     }
   }, []);
 
@@ -29,11 +29,11 @@ export const useUserRemotes = () => {
   }, [remotes]);
 
   const addRemoteBackend = useCallback((backend: RemoteBackend) => {
-    setBackends((prev) => [...prev, backend]);
+    setRemotes((prev) => [...prev, backend]);
   }, []);
 
   const removeRemoteBackend = useCallback((backend: RemoteBackend) => {
-    setBackends((prev) => prev.filter((b) => b.url !== backend.url));
+    setRemotes((prev) => prev.filter((b) => b.url !== backend.url));
   }, []);
 
   return {
