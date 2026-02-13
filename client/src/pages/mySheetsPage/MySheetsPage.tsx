@@ -488,34 +488,40 @@ export const MySheetsPage = () => {
               <div>Created</div>
             </Columns>
 
-            {sheets?.map((sheet, ind) => (
-              <File
-                tabIndex={ind}
-                key={sheet.id}
-                href={sheet.id === selectedSheet ? getUrl() : undefined}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (sheet.id !== selectedSheet) {
-                    setTimeout(() => setSelectedSheet(sheet.id), 0);
-                  }
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
+            {sheets
+              ?.sort((a, b) => {
+                const aDate = new Date(a.updated);
+                const bDate = new Date(b.updated);
+                return bDate.getTime() - aDate.getTime();
+              })
+              .map((sheet, ind) => (
+                <File
+                  tabIndex={ind}
+                  key={sheet.id}
+                  href={sheet.id === selectedSheet ? getUrl() : undefined}
+                  onClick={(e) => {
+                    e.stopPropagation();
                     if (sheet.id !== selectedSheet) {
                       setTimeout(() => setSelectedSheet(sheet.id), 0);
                     }
-                  }
-                }}
-                $selected={sheet.id === selectedSheet}
-              >
-                <NameCell>
-                  <FaFileCsv />
-                  {sheet.name}
-                </NameCell>
-                <Time dateTime={sheet.updated} />
-                <Time dateTime={sheet.created} />
-              </File>
-            ))}
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      if (sheet.id !== selectedSheet) {
+                        setTimeout(() => setSelectedSheet(sheet.id), 0);
+                      }
+                    }
+                  }}
+                  $selected={sheet.id === selectedSheet}
+                >
+                  <NameCell>
+                    <FaFileCsv />
+                    {sheet.name}
+                  </NameCell>
+                  <Time dateTime={sheet.updated} />
+                  <Time dateTime={sheet.created} />
+                </File>
+              ))}
 
             {!creatingSheet && brokenStorages.includes(storageBackend.id) ? (
               <FileCreating>
