@@ -432,6 +432,7 @@ export const MySheetsPage = () => {
                   e.stopPropagation();
                   remoteBackends.remove(backend);
                   setBrokenStorages((s) => s.filter((s) => s !== backend.url));
+                  setSelectedStorage("");
                 }}
               >
                 <IoMdClose style={{ marginLeft: "auto" }} />
@@ -447,7 +448,10 @@ export const MySheetsPage = () => {
               setAddingStorage(true);
               await new Promise((resolve) => setTimeout(resolve, 0));
               let url = prompt("Remote backend URL:");
-              if (
+              if (url && remoteBackends.backends.find((b) => b.url === url)) {
+                alert("Already connected to remote!");
+                setSelectedStorage(url);
+              } else if (
                 url &&
                 (url.startsWith("http://") || url.startsWith("https://"))
               ) {
