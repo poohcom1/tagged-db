@@ -9,7 +9,7 @@ export const Table = styled.table`
 `;
 
 export const Thead = styled.thead`
-  background: #7997d4;
+  background: #b0d3f8;
   height: ${HEADER_HEIGHT}px;
 `;
 
@@ -18,7 +18,7 @@ export const Th = styled.th`
   padding: 8px 12px;
   border-bottom: 2px solid #e5e7eb;
   font-weight: 600;
-  border: 1px solid #555555;
+  border: 1px solid #83818d;
 `;
 
 export const Tbody = styled.tbody`
@@ -34,5 +34,5 @@ export const Tbody = styled.tbody`
 export const Td = styled.td`
   min-height: 50px;
   padding: 8px 12px;
-  border: 1px solid #555555;
+  border: 1px solid #83818d;
 `;

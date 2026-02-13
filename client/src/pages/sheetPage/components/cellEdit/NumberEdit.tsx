@@ -10,19 +10,13 @@ const Container = styled.div`
 `;
 
 const Input = styled.input`
-  flex-grow: 1;
-
-  &:read-only {
-    font-weight: 500;
-    border: 2px solid transparent;
-    background: transparent;
-    // Hide arrows
-    -moz-appearance: textfield;
-    -webkit-inner-spin-button,
-    -webkit-outer-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
-    }
+  padding: 0;
+  // Hide arrows
+  -moz-appearance: textfield;
+  -webkit-inner-spin-button,
+  -webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
   }
 `;
 
@@ -39,37 +33,88 @@ interface Props {
 
 export const NumberEdit = ({ value, onChange }: Props) => {
   const [currentValue, setCurrentValue] = useState(value);
-  const [editting, setEditting] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [displayWidth, setDisplayWidth] = useState<number | undefined>(
+    undefined,
+  );
 
   useEffect(() => {
     setCurrentValue(value);
   }, [value]);
 
+  useEffect(() => {
+    setDisplayWidth(measureRef.current?.scrollWidth);
+  }, [currentValue]);
+
+  const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const saveRef = useRef<HTMLButtonElement>(null);
 
+  const measureRef = useRef<HTMLDivElement>(null);
+
+  const startEdit = () => {
+    setEditing(true);
+    setTimeout(() => inputRef.current?.focus(), 50);
+  };
+
   return (
-    <Container>
+    <Container ref={containerRef}>
+      <div
+        ref={measureRef}
+        style={{
+          ...(editing
+            ? {
+                position: "absolute",
+                opacity: "0",
+                pointerEvents: "none",
+                whiteSpace: "nowrap",
+              }
+            : {}),
+          margin: "0px",
+          padding: "8px",
+          border: "2px solid transparent",
+        }}
+      >
+        <span>{editing ? currentValue : value}</span>
+      </div>
       <Input
-        type="number"
+        type="text"
+        inputMode="decimal"
+        style={{ width: displayWidth + "px" }}
+        hidden={!editing}
         ref={inputRef}
-        readOnly={!editting}
         value={currentValue}
         onKeyDown={(e) => {
           if (e.key === "Enter") {
             onChange?.(currentValue ?? "");
-            setEditting(false);
+            setEditing(false);
             inputRef.current?.blur();
           } else if (e.key === "Escape") {
-            setEditting(false);
+            setEditing(false);
             inputRef.current?.blur();
           }
-        }}
-        onDoubleClick={() => {
-          if (!editting) {
-            setEditting(true);
-            inputRef.current?.select();
-          }
+          const allowedControlKeys = [
+            "Backspace",
+            "Delete",
+            "ArrowLeft",
+            "ArrowRight",
+            "Tab",
+            "Home",
+            "End",
+          ];
+
+          if (allowedControlKeys.includes(e.key)) return;
+          if (e.ctrlKey || e.metaKey) return;
+          const value = inputRef.current?.value ?? "";
+          if (e.key >= "0" && e.key <= "9") return;
+          if (e.key === "." && !value.includes(".")) return;
+          if (
+            e.key === "-" &&
+            inputRef.current?.selectionStart === 0 &&
+            !value.includes("-")
+          )
+            return;
+          e.preventDefault();
         }}
         onChange={(e) => {
           setCurrentValue(e.target.value);
@@ -79,23 +124,22 @@ export const NumberEdit = ({ value, onChange }: Props) => {
             return;
           }
           onChange?.(currentValue ?? "");
-          setEditting(false);
+          setEditing(false);
         }}
       />
       <CustomEditButton
         ref={saveRef}
         onClick={() => {
-          if (!editting) {
-            setEditting(true);
-            inputRef.current?.select();
+          if (!editing) {
+            startEdit();
           } else {
             onChange?.(currentValue ?? "");
-            setEditting(false);
+            setEditing(false);
             inputRef.current?.blur();
           }
         }}
       >
-        {!editting ? "edit" : "save"}
+        {!editing ? "edit" : "save"}
       </CustomEditButton>
     </Container>
   );

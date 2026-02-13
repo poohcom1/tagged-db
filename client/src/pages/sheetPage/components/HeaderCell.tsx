@@ -7,7 +7,7 @@ const HeaderContainer = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-weight: 600;
+  font-weight: 700;
 `;
 
 const EditButton = styled(BasicButton)`

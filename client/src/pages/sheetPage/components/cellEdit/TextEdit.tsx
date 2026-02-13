@@ -1,23 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { EditButton } from "../../../../components/EditButton";
+import { BaseInput } from "../../../../components/BaseInput";
 
 const Container = styled.div`
   display: flex;
   align-items: center;
   flex-grow: 1;
   gap: 4px;
+  width: fix-content;
 `;
 
-const Input = styled.input`
-  flex-grow: 1;
-
-  &:read-only {
-    font-weight: 500;
-    border: 2px solid transparent;
-    background: transparent;
-    outline: none;
-  }
+const Input = styled(BaseInput)`
+  padding: 0;
 `;
 
 const CustomEditButton = styled(EditButton)`
@@ -33,35 +28,74 @@ interface Props {
 
 export const TextEdit = ({ value, onChange }: Props) => {
   const [currentValue, setCurrentValue] = useState(value);
-  const [editting, setEditting] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [displayWidth, setDisplayWidth] = useState<number | undefined>(
+    undefined,
+  );
 
   useEffect(() => {
     setCurrentValue(value);
   }, [value]);
 
+  useEffect(() => {
+    setDisplayWidth(measureRef.current?.scrollWidth);
+  }, [currentValue]);
+
+  const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const saveRef = useRef<HTMLButtonElement>(null);
 
+  const measureRef = useRef<HTMLDivElement>(null);
+
+  const isLink =
+    currentValue?.startsWith("http://") || currentValue?.startsWith("https://");
+
+  const startEdit = () => {
+    setEditing(true);
+    setTimeout(() => inputRef.current?.select(), 50);
+  };
+
   return (
-    <Container>
+    <Container ref={containerRef}>
+      <div
+        ref={measureRef}
+        style={{
+          ...(editing
+            ? {
+                position: "absolute",
+                opacity: "0",
+                pointerEvents: "none",
+                whiteSpace: "nowrap",
+              }
+            : {}),
+          margin: "0px",
+          padding: "8px",
+          border: "2px solid transparent",
+        }}
+      >
+        {!editing && isLink ? (
+          <a href={value} target="_blank">
+            {value}
+          </a>
+        ) : (
+          <span style={{ fontWeight: 600 }}>
+            {editing ? currentValue : value}
+          </span>
+        )}
+      </div>
       <Input
+        style={{ width: displayWidth + "px" }}
+        hidden={!editing}
         ref={inputRef}
-        readOnly={!editting}
         value={currentValue}
         onKeyDown={(e) => {
           if (e.key === "Enter") {
             onChange?.(currentValue ?? "");
-            setEditting(false);
+            setEditing(false);
             inputRef.current?.blur();
           } else if (e.key === "Escape") {
-            setEditting(false);
+            setEditing(false);
             inputRef.current?.blur();
-          }
-        }}
-        onDoubleClick={() => {
-          if (!editting) {
-            setEditting(true);
-            inputRef.current?.select();
           }
         }}
         onChange={(e) => {
@@ -72,23 +106,22 @@ export const TextEdit = ({ value, onChange }: Props) => {
             return;
           }
           onChange?.(currentValue ?? "");
-          setEditting(false);
+          setEditing(false);
         }}
       />
       <CustomEditButton
         ref={saveRef}
         onClick={() => {
-          if (!editting) {
-            setEditting(true);
-            inputRef.current?.select();
+          if (!editing) {
+            startEdit();
           } else {
             onChange?.(currentValue ?? "");
-            setEditting(false);
+            setEditing(false);
             inputRef.current?.blur();
           }
         }}
       >
-        {!editting ? "edit" : "save"}
+        {!editing ? "edit" : "save"}
       </CustomEditButton>
     </Container>
   );
