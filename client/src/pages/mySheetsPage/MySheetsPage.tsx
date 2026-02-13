@@ -118,6 +118,7 @@ const FilesContainerOutline = styled.div`
   position: relative;
   z-index: 5;
   margin-top: -2px;
+  min-height: 0px;
 
   ${border({ thickness: 2 })};
 `;
@@ -129,6 +130,8 @@ const FilesContainer = styled.div`
   display: flex;
   flex-direction: column;
   flex-grow: 1;
+
+  overflow-y: scroll;
 `;
 
 const Columns = styled.div`
@@ -152,6 +155,7 @@ const File = styled.a<FileProps>`
   color: inherit;
   text-decoration: none;
   height: 48px;
+  min-height: 48px;
   display: grid;
   grid-template-columns: 1fr 160px 160px;
   align-items: center;
