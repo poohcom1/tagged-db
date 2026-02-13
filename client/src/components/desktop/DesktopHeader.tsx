@@ -46,7 +46,7 @@ const EndRowButton = styled.a`
 export const DesktopHeader = () => {
   return (
     <HeaderContainer>
-      <img height="16px" width="16px" src="/favicon.ico" />
+      <img height="16px" width="16px" src="/icon.png" />
       <div>PocchiOS</div>
       <div>|</div>
       <div>My Tagged DB</div>
