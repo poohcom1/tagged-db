@@ -18,7 +18,7 @@ const server = Fastify({
 });
 
 // Static
-await server.register(cors as any, {
+await server.register(cors, {
   origin: "*",
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type"],
