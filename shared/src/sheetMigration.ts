@@ -1,11 +1,80 @@
 import { Err, Ok, Result } from "./result";
-import type { Column, ColumnType, ColumnValue, SheetData } from "./sheets";
-import {
-  parseTags,
-  validateOptionsReorder,
-  validateType,
-} from "./sheetValidation";
+import type { Column, ColumnType, ColumnValue, SheetData } from "./types/sheet";
+import { parseTags, validateType } from "./sheetValidation";
+import { ColumnEditAction, SheetAction, SheetActionType } from "./types/action";
 
+export function reduce(
+  sheetData: SheetData,
+  action: SheetAction,
+): Result<SheetData> {
+  let newSheet = sheetData;
+  switch (action.action) {
+    case "update_cell":
+      const updateCellRes = updateCell(
+        sheetData,
+        action.params.rowId,
+        action.params.columnId,
+        action.params.value,
+      );
+      // Update tags if necessary
+      if (
+        sheetData.columns.find((c) => c.id === action.params.columnId)?.type ===
+        "tags"
+      ) {
+        newSheet.tagCache = updateTagCache(newSheet);
+      }
+      if (!updateCellRes.ok) return updateCellRes;
+      newSheet.rows = updateCellRes.value;
+      break;
+    case "add_row":
+      const newRows = addRow(sheetData, action.params.rowId);
+      if (!newRows.ok) return newRows;
+      newSheet.rows = newRows.value;
+      break;
+    case "delete_row":
+      const rows = sheetData.rows;
+      const row = rows.find((row) => row.id === action.params.rowId);
+      if (!row) {
+        return Err("Row not found. ID: " + action.params.rowId);
+      }
+      rows.splice(rows.indexOf(row), 1);
+      newSheet.rows = rows;
+      newSheet.tagCache = updateTagCache(newSheet);
+      break;
+    case "add_column":
+      const newColumn = createColumn(action.params.columnId);
+      const addColumnRes = addColumn(sheetData, newColumn);
+      if (!addColumnRes.ok) return addColumnRes;
+      newSheet.columns = addColumnRes.value;
+      break;
+    case "delete_column":
+      const columns = sheetData.columns;
+      const column = columns.find(
+        (column) => column.id === action.params.columnId,
+      );
+      if (!column) {
+        return Err("Column not found. ID: " + action.params.columnId);
+      }
+      columns.splice(columns.indexOf(column), 1);
+      newSheet.columns = [...columns];
+      break;
+    case "update_column_batched":
+      for (const columnAction of action.params.actions) {
+        const updateColumnRes = updateColumn(
+          sheetData,
+          action.params.columnId,
+          columnAction,
+        );
+        if (!updateColumnRes.ok) return updateColumnRes;
+        newSheet = updateColumnRes.value;
+      }
+      break;
+  }
+  newSheet.updated = new Date().toISOString();
+  return Ok({ ...newSheet });
+}
+
+// ============================================================
 export function updateTimestamp(sheetData: SheetData): SheetData {
   return { ...sheetData, updated: new Date().toISOString() };
 }
@@ -24,7 +93,7 @@ export function createSheet(id: string, name: string): SheetData {
 }
 
 // Sheet
-export function updateTagCache(sheetData: SheetData): SheetData["tagCache"] {
+function updateTagCache(sheetData: SheetData): SheetData["tagCache"] {
   const tagCache: SheetData["tagCache"] = {};
 
   for (const column of sheetData.columns) {
@@ -47,53 +116,7 @@ export function updateTagCache(sheetData: SheetData): SheetData["tagCache"] {
 }
 
 // Column
-export enum ColumnEditType {
-  Rename,
-  ChangeType,
-  Delete,
-  EnumUpdate,
-  Reorder,
-}
-
-export type ColumnEditAction =
-  | ColumnRenameAction
-  | ColumnChangeTypeAction
-  | ColumnDeleteAction
-  | ColumnEnumUpdateAction
-  | ColumnReorderAction;
-
-interface BaseColumnAction {
-  editType: ColumnEditType;
-}
-
-interface ColumnRenameAction extends BaseColumnAction {
-  editType: ColumnEditType.Rename;
-  title: string;
-}
-
-interface ColumnChangeTypeAction extends BaseColumnAction {
-  editType: ColumnEditType.ChangeType;
-  toType: ColumnType;
-}
-
-interface ColumnDeleteAction extends BaseColumnAction {
-  editType: ColumnEditType.Delete;
-}
-
-interface ColumnEnumUpdateAction extends BaseColumnAction {
-  editType: ColumnEditType.EnumUpdate;
-
-  // ID = original values
-  idOrder: string[];
-  idToNames: Record<string, string>;
-}
-
-interface ColumnReorderAction extends BaseColumnAction {
-  editType: ColumnEditType.Reorder;
-  toIndex: number;
-}
-
-export function updateColumn(
+function updateColumn(
   sheetData: SheetData,
   columnId: string,
   payload: ColumnEditAction,
@@ -106,10 +129,10 @@ export function updateColumn(
   }
 
   switch (payload.editType) {
-    case ColumnEditType.Rename:
+    case "rename":
       column.title = payload.title;
       break;
-    case ColumnEditType.ChangeType:
+    case "change_type":
       if (!validateType(payload.toType)) {
         return Err("Invalid type: " + payload.toType);
       }
@@ -133,10 +156,7 @@ export function updateColumn(
           break;
       }
       break;
-    case ColumnEditType.Delete:
-      columns.splice(columns.indexOf(column), 1);
-      break;
-    case ColumnEditType.EnumUpdate:
+    case "enum_update":
       if (column.type !== "enum") {
         return Err("Column is not an enum");
       }
@@ -159,7 +179,7 @@ export function updateColumn(
 
       column.options = updatedOptions;
       break;
-    case ColumnEditType.Reorder:
+    case "reorder":
       if (payload.toIndex < 0 || payload.toIndex >= columns.length) {
         return Err("Invalid index: " + payload.toIndex);
       }
@@ -173,7 +193,7 @@ export function updateColumn(
   return Ok({ ...sheetData, columns });
 }
 
-export function createColumn(
+function createColumn(
   columnId: string,
   title: string = "Untitled column",
   type: ColumnType = "text",
@@ -181,25 +201,19 @@ export function createColumn(
   return { id: columnId, title, type, options: [] };
 }
 
-export function addColumn(
+function addColumn(
   sheetData: SheetData,
   column: Column,
-): Result<SheetData> {
-  return Ok({
-    ...sheetData,
-    columns: [...sheetData.columns, column],
-  });
+): Result<SheetData["columns"]> {
+  return Ok([...sheetData.columns, column]);
 }
 
 // Row
-export function addRow(
-  sheetData: SheetData,
-  id: string,
-): Result<SheetData["rows"]> {
+function addRow(sheetData: SheetData, id: string): Result<SheetData["rows"]> {
   return Ok([...sheetData.rows, { id, values: {} }]);
 }
 
-export function deleteRow(
+function deleteRow(
   sheetData: SheetData,
   id: string,
 ): Result<SheetData["rows"]> {
@@ -207,7 +221,7 @@ export function deleteRow(
 }
 
 // Cell
-export function updateCell(
+function updateCell(
   sheetData: SheetData,
   rowId: string,
   columnId: string,

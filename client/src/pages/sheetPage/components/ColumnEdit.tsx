@@ -1,9 +1,9 @@
-import { ColumnEditAction, ColumnEditType } from "@app/shared/sheetMigration";
-import { Column, ColumnType, SheetData } from "@app/shared/sheets";
+import { Column, ColumnType, SheetData } from "@app/shared/types/sheet";
 import { createDefaultEnum, validateEnums } from "@app/shared/sheetValidation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { EditModalContainer } from "../../../components/EditModalContainer";
+import { ColumnEditAction, ColumnEditType } from "@app/shared/types/action";
 
 // Style
 const Container = styled.div`
@@ -43,13 +43,15 @@ interface Prop {
 
   columnId: string | null;
   sheetData: SheetData;
-  onCommit?: (actions: ColumnEditAction[]) => void;
+  onSubmit?: (actions: ColumnEditAction[]) => void;
+  onDelete?: () => void;
 }
 
 export const ColumnEdit = ({
   columnId,
   sheetData,
-  onCommit,
+  onSubmit,
+  onDelete,
   isOpen,
   onClose,
 }: Prop) => {
@@ -99,14 +101,14 @@ export const ColumnEdit = ({
         return;
       }
       actionArr.push({
-        editType: ColumnEditType.EnumUpdate,
+        editType: "enum_update",
         ...enumState,
       });
       console.log(actionArr[actionArr.length - 1]);
     }
-    onCommit?.(actionArr);
+    onSubmit?.(actionArr);
     actions.current = {};
-  }, [column, enumState, onCommit]);
+  }, [column, enumState, onSubmit]);
 
   let AdvancedEdit = null;
   switch (column?.type) {
@@ -235,8 +237,8 @@ export const ColumnEdit = ({
                 defaultValue={column.title}
                 autoFocus
                 onChange={(e) =>
-                  (actions.current[ColumnEditType.Rename] = {
-                    editType: ColumnEditType.Rename,
+                  (actions.current["rename"] = {
+                    editType: "rename",
                     title: e.target.value,
                   })
                 }
@@ -248,8 +250,8 @@ export const ColumnEdit = ({
                 name="type"
                 defaultValue={column.type}
                 onChange={(e) => {
-                  actions.current[ColumnEditType.ChangeType] = {
-                    editType: ColumnEditType.ChangeType,
+                  actions.current["change_type"] = {
+                    editType: "change_type",
                     toType: e.target.value as ColumnType,
                   };
                   setColumn((c) =>
@@ -284,11 +286,7 @@ export const ColumnEdit = ({
                   `Are you sure you want to delete column "${column.title}"?`,
                 )
               ) {
-                onCommit?.([
-                  {
-                    editType: ColumnEditType.Delete,
-                  },
-                ]);
+                onDelete?.();
               }
             }}
           >

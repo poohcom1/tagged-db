@@ -1,5 +1,5 @@
 import { Err, Ok, Result } from "./result";
-import { ColumnType } from "./sheets";
+import { ColumnType } from "./types/sheet";
 
 export function validateType(type: string): type is ColumnType {
   return ["text", "number", "enum", "tags"].includes(type);

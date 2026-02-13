@@ -1,10 +1,7 @@
 import { Err, Ok, Result } from "@app/shared/result";
-import { ColumnEditAction } from "@app/shared/sheetMigration";
-import { ColumnType, SheetData, SheetMeta } from "@app/shared/sheets";
+import { SheetData, SheetMeta } from "@app/shared/types/sheet";
 import { StorageBackend } from "./storageBackend";
 import {
-  ADD_COLUMN,
-  ADD_ROW,
   BodyOf,
   buildUrl,
   CREATE_SHEET,
@@ -14,144 +11,107 @@ import {
   GET_SHEETS,
   ParamsOf,
   RENAME_SHEET,
-  UPDATE_CELL,
-  UPDATE_COLUMN_BATCHED,
+  UPDATE_SHEET,
 } from "@app/shared/endpoints";
+import { SheetAction } from "@app/shared/types/action";
 
 // API
-async function getSheets(): Promise<Result<SheetMeta[]>> {
-  try {
-    const res = await fetchEndpoint(GET_SHEETS, undefined, undefined);
-    await handleHttpError(res);
-    const sheetsMeta = (await res.json()) as SheetMeta[];
-    return Ok(sheetsMeta);
-  } catch (e) {
-    return Err(handleErrorObject(e));
-  }
-}
 
-async function renameSheet(sheetId: string, title: string) {
-  try {
-    const res = await fetchEndpoint(RENAME_SHEET, { sheetId }, { title });
-    await handleHttpError(res);
-    return Ok();
-  } catch (e) {
-    return Err(handleErrorObject(e));
-  }
-}
-
-async function deleteSheet(sheetId: string) {
-  try {
-    const res = await fetchEndpoint(DELETE_SHEET, { sheetId }, undefined);
-    await handleHttpError(res);
-    return Ok();
-  } catch (e) {
-    return Err(handleErrorObject(e));
-  }
-}
-
-async function createSheet(title: string): Promise<Result<SheetMeta>> {
-  try {
-    const res = await fetchEndpoint(CREATE_SHEET, undefined, { title });
-    await handleHttpError(res);
-    const sheetMeta = (await res.json()) as SheetMeta;
-    return Ok(sheetMeta);
-  } catch (e) {
-    return Err(handleErrorObject(e));
-  }
-}
-
-async function getSheetData(sheetId: string): Promise<Result<SheetData>> {
-  try {
-    const res = await fetchEndpoint(GET_SHEET_DATA, { sheetId }, undefined);
-    await handleHttpError(res);
-    const sheetData = (await res.json()) as SheetData;
-    return Ok(sheetData);
-  } catch (e) {
-    return Err(handleErrorObject(e));
-  }
-}
-
-async function updateCell(
-  sheetId: string,
-  rowId: string,
-  columnId: string,
-  value: string,
-) {
-  try {
-    const res = await fetchEndpoint(
-      UPDATE_CELL,
-      { sheetId, rowId, columnId },
-      { value },
-    );
-    await handleHttpError(res);
-    return Ok();
-  } catch (e) {
-    return Err(handleErrorObject(e));
-  }
-}
-
-async function createColumn(
-  sheetId: string,
-  columnId: string,
-  columnTitle: string,
-  columnType: ColumnType,
-) {
-  try {
-    const res = await fetchEndpoint(
-      ADD_COLUMN,
-      { sheetId },
-      { columnId, title: columnTitle, type: columnType },
-    );
-    await handleHttpError(res);
-    return Ok();
-  } catch (e) {
-    return Err(handleErrorObject(e));
-  }
-}
-
-async function createRow(sheetId: string, rowId: string) {
-  try {
-    const res = await fetchEndpoint(ADD_ROW, { sheetId }, { rowId });
-    await handleHttpError(res);
-    return Ok();
-  } catch (e) {
-    return Err(handleErrorObject(e));
-  }
-}
-
-export const apiBackend: StorageBackend = {
-  getSheets,
-  renameSheet,
-  deleteSheet,
-  createSheet,
-  getSheet: getSheetData,
-  updateCell,
-  createColumn,
-  createRow,
-  updateColumnBatched,
-};
-
-export async function updateColumnBatched(
-  sheetId: string,
-  columnId: string,
-  payload: ColumnEditAction[],
-) {
-  try {
-    const res = await fetchEndpoint(
-      UPDATE_COLUMN_BATCHED,
-      { sheetId, columnId },
-      { payload },
-    );
-    await handleHttpError(res);
-    return Ok();
-  } catch (e) {
-    return Err(handleErrorObject(e));
-  }
-}
+export const apiBackend = (baseUrl: string): StorageBackend => ({
+  async getSheets(): Promise<Result<SheetMeta[]>> {
+    try {
+      const res = await fetchEndpoint(
+        baseUrl,
+        GET_SHEETS,
+        undefined,
+        undefined,
+      );
+      await handleHttpError(res);
+      const sheetsMeta = (await res.json()) as SheetMeta[];
+      return Ok(sheetsMeta);
+    } catch (e) {
+      return Err(handleErrorObject(e));
+    }
+  },
+  async renameSheet(sheetId: string, title: string) {
+    try {
+      const res = await fetchEndpoint(
+        baseUrl,
+        RENAME_SHEET,
+        { sheetId },
+        { title },
+      );
+      await handleHttpError(res);
+      return Ok();
+    } catch (e) {
+      return Err(handleErrorObject(e));
+    }
+  },
+  async deleteSheet(sheetId: string) {
+    try {
+      const res = await fetchEndpoint(
+        baseUrl,
+        DELETE_SHEET,
+        { sheetId },
+        undefined,
+      );
+      await handleHttpError(res);
+      return Ok();
+    } catch (e) {
+      return Err(handleErrorObject(e));
+    }
+  },
+  async createSheet(title: string): Promise<Result<SheetMeta>> {
+    try {
+      const res = await fetchEndpoint(baseUrl, CREATE_SHEET, undefined, {
+        title,
+      });
+      await handleHttpError(res);
+      const sheetMeta = (await res.json()) as SheetMeta;
+      return Ok(sheetMeta);
+    } catch (e) {
+      return Err(handleErrorObject(e));
+    }
+  },
+  async getSheetData(sheetId: string): Promise<Result<SheetData>> {
+    try {
+      const res = await fetchEndpoint(
+        baseUrl,
+        GET_SHEET_DATA,
+        { sheetId },
+        undefined,
+      );
+      await handleHttpError(res);
+      const sheetData = (await res.json()) as SheetData;
+      return Ok(sheetData);
+    } catch (e) {
+      return Err(handleErrorObject(e));
+    }
+  },
+  async updateSheet(
+    sheetId: string,
+    action: SheetAction,
+  ): Promise<Result<void>> {
+    return enqueue(async () => {
+      try {
+        const res = await fetchEndpoint(
+          baseUrl,
+          UPDATE_SHEET,
+          { sheetId },
+          { action },
+        );
+        await handleHttpError(res);
+        return Ok();
+      } catch (e) {
+        return Err(handleErrorObject(e));
+      }
+    });
+  },
+});
 
 // On close
 let activeRequests = 0;
+let pendingRequests = 0;
 
 function startRequest() {
   activeRequests++;
@@ -174,14 +134,18 @@ if (typeof window !== "undefined") {
   });
 }
 
+/**
+ * @param baseUrl Base url without trailing slash
+ */
 async function fetchEndpoint<E extends Endpoint<unknown, unknown, unknown>>(
+  baseUrl: string,
   endpoint: E,
   params: ParamsOf<E>,
   body: BodyOf<E>,
 ): Promise<Response> {
   startRequest();
   try {
-    const res = await fetch(buildUrl(endpoint, params), {
+    const res = await fetch(baseUrl + buildUrl(endpoint, params), {
       method: endpoint.method,
       headers: body
         ? {
@@ -197,6 +161,31 @@ async function fetchEndpoint<E extends Endpoint<unknown, unknown, unknown>>(
   } finally {
     endRequest();
   }
+}
+let updateQueue: Promise<void> = Promise.resolve();
+
+function enqueue<T>(task: () => Promise<T>): Promise<T> {
+  // Count as pending immediately (closes race window)
+  pendingRequests++;
+
+  const wrappedTask = async () => {
+    try {
+      return await task();
+    } finally {
+      // Remove from pending once it actually runs (success or error)
+      pendingRequests = Math.max(0, pendingRequests - 1);
+    }
+  };
+
+  const result = updateQueue.then(wrappedTask, wrappedTask);
+
+  // Keep queue chain alive even if task fails
+  updateQueue = result.then(
+    () => undefined,
+    () => undefined,
+  );
+
+  return result;
 }
 
 // Helper

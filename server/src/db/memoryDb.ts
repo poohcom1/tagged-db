@@ -1,7 +1,7 @@
 import * as migration from "@app/shared/sheetMigration";
-import type { DBInterface } from "../types.js";
+import type { DBInterface } from "../types/db.js";
 import { Err, Ok, Result } from "@app/shared/result";
-import { type SheetMeta, type SheetData } from "@app/shared/sheets";
+import { type SheetMeta, type SheetData } from "@app/shared/types/sheet";
 import { resolve } from "path";
 import { writeFile } from "fs/promises";
 
@@ -35,88 +35,16 @@ export const memoryDb: DBInterface = {
   async getSheetData(sheetId: string) {
     return Result(db.sheetData[sheetId], "Sheet not found: " + sheetId);
   },
-
-  async addRow(sheetId, rowId) {
-    const sheetData = db.sheetData[sheetId];
-    if (!sheetData) {
+  async updateSheet(id, SheetAction) {
+    const sheet = db.sheetData[id];
+    if (!sheet) {
       return Err("Sheet not found");
     }
-    const res = migration.addRow(sheetData, rowId ?? crypto.randomUUID());
+    const res = migration.reduce(sheet, SheetAction);
     if (!res.ok) {
-      return Err(res.error);
+      return res;
     }
-    db.sheetData[sheetId] = migration.updateTimestamp({
-      ...sheetData,
-      rows: res.value,
-    });
-    return Ok();
-  },
-  async updateSheetDataCell(sheetId, rowId, columnId, value) {
-    const sheetData = db.sheetData[sheetId];
-
-    if (!sheetData) {
-      return { error: "Sheet not found", ok: false };
-    }
-
-    const row = sheetData.rows.find((row) => row.id === rowId);
-    if (!row) {
-      return { error: "Row not found", ok: false };
-    }
-
-    row.values[columnId] = value;
-
-    if (
-      sheetData.columns.find((column) => column.id === columnId)?.type ===
-      "tags"
-    ) {
-      sheetData.tagCache = migration.updateTagCache(sheetData);
-    }
-
-    db.sheetData[sheetId] = migration.updateTimestamp(sheetData);
-
-    return Ok();
-  },
-
-  // Column
-  async addColumn(sheetId, columnId, title, type) {
-    const sheetData = db.sheetData[sheetId];
-    if (!sheetData) {
-      return Err("Sheet not found");
-    }
-    const res = migration.addColumn(sheetData, { id: columnId, title, type });
-    if (!res.ok) {
-      return Err(res.error);
-    }
-    db.sheetData[sheetId] = migration.updateTimestamp(res.value);
-    return Ok();
-  },
-  async updateColumn(sheetId, columnId, payload) {
-    const sheetData = db.sheetData[sheetId];
-    if (!sheetData) {
-      return Err("Sheet not found");
-    }
-    const res = migration.updateColumn(sheetData, columnId, payload);
-    if (!res.ok) {
-      return Err(res.error);
-    }
-    db.sheetData[sheetId] = migration.updateTimestamp(res.value);
-    return Ok();
-  },
-  async updateColumnBatched(sheetId, columnId, payloads) {
-    let sheetData = db.sheetData[sheetId];
-    if (!sheetData) {
-      return Err("Sheet not found");
-    }
-
-    for (const payload of payloads) {
-      const res = migration.updateColumn(sheetData, columnId, payload);
-      if (!res.ok) {
-        return Err(res.error);
-      }
-      sheetData = res.value;
-    }
-
-    db.sheetData[sheetId] = migration.updateTimestamp(sheetData);
+    db.sheetData[id] = res.value;
     return Ok();
   },
 };

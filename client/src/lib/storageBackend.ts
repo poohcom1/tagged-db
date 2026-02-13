@@ -1,8 +1,7 @@
 import { Result } from "@app/shared/result";
-import { ColumnEditAction } from "@app/shared/sheetMigration";
-import { ColumnType, SheetData, SheetMeta } from "@app/shared/sheets";
+import { SheetData, SheetMeta } from "@app/shared/types/sheet";
 import { localStorageBackend } from "./localStorageBackend";
-import { apiBackend } from "./apiBackend";
+import { SheetAction } from "@app/shared/types/action";
 
 export interface StorageBackend {
   getSheets(): Promise<Result<SheetMeta[]>>;
@@ -10,31 +9,11 @@ export interface StorageBackend {
   deleteSheet(id: string): Promise<Result<void>>;
   createSheet(title: string): Promise<Result<SheetMeta>>;
 
-  getSheet(sheetId: string): Promise<Result<SheetData>>;
-  createRow(sheetId: string, rowId: string): Promise<Result<void>>;
-  updateCell(
-    sheetId: string,
-    rowId: string,
-    columnId: string,
-    value: string,
-  ): Promise<Result<void>>;
-  createColumn(
-    sheetId: string,
-    columnId: string,
-    columnTitle: string,
-    columnType: ColumnType,
-  ): Promise<Result<void>>;
-  updateColumnBatched(
-    sheetId: string,
-    columnId: string,
-    payloads: ColumnEditAction[],
-  ): Promise<Result<void>>;
+  getSheetData(sheetId: string): Promise<Result<SheetData>>;
+  updateSheet(sheetId: string, SheetAction: SheetAction): Promise<Result<void>>;
 }
 
 console.log(
   "Running with storage backend: " + import.meta.env.VITE_STORAGE_BACKEND,
 );
-export const storageBackend =
-  import.meta.env.VITE_STORAGE_BACKEND === "server"
-    ? apiBackend
-    : localStorageBackend;
+export const storageBackend = localStorageBackend;

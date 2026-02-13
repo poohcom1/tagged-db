@@ -1,5 +1,5 @@
-import { ColumnEditAction } from "./sheetMigration";
-import { SheetData, SheetMeta } from "./sheets";
+import { SheetAction } from "./types/action";
+import { SheetData, SheetMeta } from "./types/sheet";
 
 export const GET_SHEETS: Endpoint<undefined, undefined, SheetMeta[]> = {
   url: "/api/sheets",
@@ -35,35 +35,12 @@ export const GET_SHEET_DATA: Endpoint<
   method: "GET",
 };
 
-export const ADD_COLUMN: Endpoint<
+export const UPDATE_SHEET: Endpoint<
   { sheetId: string },
-  { columnId?: string; title: string; type: string },
+  { action: SheetAction },
   undefined
 > = {
-  url: "/api/sheets/:sheetId/columns",
-  method: "POST",
-};
-
-export const ADD_ROW: Endpoint<{ sheetId: string }, { rowId?: string }> = {
-  url: "/api/sheets/:sheetId/rows",
-  method: "POST",
-};
-
-export const UPDATE_CELL: Endpoint<
-  { sheetId: string; rowId: string; columnId: string },
-  { value: string },
-  undefined
-> = {
-  url: "/api/sheets/:sheetId/rows/:rowId/cells/:columnId",
-  method: "PATCH",
-};
-
-export const UPDATE_COLUMN_BATCHED: Endpoint<
-  { sheetId: string; columnId: string },
-  { payload: ColumnEditAction[] },
-  undefined
-> = {
-  url: "/api/sheets/:sheetId/columns/:columnId",
+  url: "/api/sheets/:sheetId/data",
   method: "PATCH",
 };
 

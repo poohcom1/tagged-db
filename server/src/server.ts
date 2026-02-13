@@ -1,29 +1,15 @@
-import Fastify, {
-  type FastifyInstance,
-  type RouteHandlerMethod,
-  type RouteShorthandMethod,
-} from "fastify";
+import Fastify from "fastify";
 import fastifyStatic from "@fastify/static";
 import path from "path";
-import type { SheetMeta, SheetData } from "@app/shared/sheets";
 import { memoryDb } from "./db/memoryDb.js";
-import type { ColumnEditAction } from "@app/shared/sheetMigration";
-import { validateType } from "@app/shared/sheetValidation";
 import {
-  ADD_COLUMN,
-  ADD_ROW,
   CREATE_SHEET,
   DELETE_SHEET,
   GET_SHEETS,
   GET_SHEET_DATA,
   RENAME_SHEET,
-  UPDATE_CELL,
-  UPDATE_COLUMN_BATCHED,
-  type BodyOf,
-  type Endpoint,
+  UPDATE_SHEET,
   type EndpointOf,
-  type ParamsOf,
-  type ReplyOf,
 } from "@app/shared/endpoints";
 import { unwrapOrThrow } from "@app/shared/result";
 import { errorToString } from "@app/shared/util";
@@ -98,50 +84,12 @@ server.get<EndpointOf<typeof GET_SHEET_DATA>>(
   },
 );
 
-server.post<EndpointOf<typeof ADD_COLUMN>>(
-  ADD_COLUMN.url,
+server.patch<EndpointOf<typeof UPDATE_SHEET>>(
+  UPDATE_SHEET.url,
   async function handler(request, reply) {
-    if (!validateType(request.body.type))
-      return reply.code(500).send("Invalid column type: " + request.body.type);
-
-    const res = await db.addColumn(
+    const res = await db.updateSheet(
       request.params.sheetId,
-      request.body.columnId ?? crypto.randomUUID(),
-      request.body.title,
-      request.body.type,
-    );
-    return unwrapOrThrow(res);
-  },
-);
-
-server.post<EndpointOf<typeof ADD_ROW>>(
-  ADD_ROW.url,
-  async function handler(request, reply) {
-    const res = await db.addRow(request.params.sheetId, request.body.rowId);
-    return unwrapOrThrow(res);
-  },
-);
-
-server.patch<EndpointOf<typeof UPDATE_CELL>>(
-  UPDATE_CELL.url,
-  async function handler(request, reply) {
-    const res = await db.updateSheetDataCell(
-      request.params.sheetId,
-      request.params.rowId,
-      request.params.columnId,
-      request.body.value,
-    );
-    return unwrapOrThrow(res);
-  },
-);
-
-server.patch<EndpointOf<typeof UPDATE_COLUMN_BATCHED>>(
-  UPDATE_COLUMN_BATCHED.url,
-  async function handler(request, reply) {
-    const res = await db.updateColumnBatched(
-      request.params.sheetId,
-      request.params.columnId,
-      request.body.payload,
+      request.body.action,
     );
     return unwrapOrThrow(res);
   },

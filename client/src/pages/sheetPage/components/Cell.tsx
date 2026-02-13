@@ -1,4 +1,4 @@
-import { Column, ColumnValue } from "@app/shared/sheets";
+import { Column, ColumnValue } from "@app/shared/types/sheet";
 import React, { useCallback, useMemo } from "react";
 import { Td } from "./Table";
 import { TextEdit } from "./cellEdit/TextEdit";

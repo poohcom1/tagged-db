@@ -1,4 +1,4 @@
-import { Column, ColumnValue, SheetData } from "@app/shared/sheets";
+import { Column, ColumnValue, SheetData } from "@app/shared/types/sheet";
 import * as migrator from "@app/shared/sheetMigration";
 import { useCallback, useEffect, useState } from "react";
 import { Cell } from "./components/Cell";
@@ -11,6 +11,7 @@ import { ColumnEdit } from "./components/ColumnEdit";
 import { storageBackend } from "../../lib/storageBackend";
 import { BasicButton } from "../../components/BasicButton";
 import { EditButton } from "../../components/EditButton";
+import { ColumnEditAction, SheetAction } from "@app/shared/types/action";
 
 // Styles
 const MainContainer = styled.div`
@@ -75,8 +76,9 @@ export const SheetPage = () => {
     }
   }, [sheetData]);
 
-  const loadSheets = useCallback(async () => {
-    const res = await storageBackend.getSheet(sheetId);
+  const loadSheet = useCallback(async () => {
+    const res = await storageBackend.getSheetData(sheetId);
+    console.log(res);
     if (res.ok) {
       setSheetData(res.value);
     } else {
@@ -85,132 +87,155 @@ export const SheetPage = () => {
   }, [sheetId]);
 
   useEffect(() => {
-    loadSheets();
-  }, [loadSheets]);
+    loadSheet();
+  }, [loadSheet]);
 
   const onUpdateCell = useCallback(
     async (rowId: string, column: Column, value: ColumnValue) => {
       if (sheetData === null) {
         return;
       }
-      const rowsResult = migrator.updateCell(
-        sheetData,
-        rowId,
-        column.id,
-        value,
-      );
+      const action: SheetAction = {
+        action: "update_cell",
+        params: {
+          rowId,
+          columnId: column.id,
+          value,
+        },
+      };
+      const rowsResult = migrator.reduce(sheetData, action);
       if (!rowsResult.ok) {
         alert(rowsResult.error);
-        loadSheets();
         return;
       }
+      setSheetData(rowsResult.value);
 
-      let tagCache: SheetData["tagCache"] | undefined;
-      if (column.type === "tags") {
-        tagCache = migrator.updateTagCache({
-          ...sheetData,
-          rows: rowsResult.value,
-        });
-      }
-      setSheetData((s) =>
-        s
-          ? { ...s, rows: rowsResult.value, tagCache: tagCache ?? s.tagCache }
-          : null,
-      );
-
-      const res = await storageBackend.updateCell(
-        sheetId,
-        rowId,
-        column.id,
-        value,
-      );
-      if (!res.ok) {
-        alert(res.error);
-      }
+      storageBackend.updateSheet(sheetId, action).then((res) => {
+        if (!res.ok) {
+          alert(res.error);
+          loadSheet();
+        }
+      });
     },
-    [loadSheets, sheetData, sheetId],
+    [loadSheet, sheetData, sheetId],
   );
 
   if (!sheetData) return null;
 
-  const onUpdateColumn = async (
-    columnId: string,
-    actions: migrator.ColumnEditAction[],
-  ) => {
+  const onUpdateColumn = (columnId: string, actions: ColumnEditAction[]) => {
     if (actions.length === 0) {
       return;
     }
 
-    let updatedSheetData = sheetData;
-    for (const action of actions) {
-      const columnUpdateResult = migrator.updateColumn(
-        sheetData,
+    const action: SheetAction = {
+      action: "update_column_batched",
+      params: {
         columnId,
-        action,
-      );
-      if (!columnUpdateResult.ok) {
-        alert(columnUpdateResult.error);
-        return;
-      }
-      updatedSheetData = columnUpdateResult.value;
+        actions,
+      },
+    };
+    const updatedSheetData = migrator.reduce(sheetData, action);
+    if (!updatedSheetData.ok) {
+      alert(updatedSheetData.error);
+      return;
     }
-    setSheetData(updatedSheetData);
+    setSheetData(updatedSheetData.value);
 
-    const res = await storageBackend.updateColumnBatched(
-      sheetId,
-      columnId,
-      actions,
-    );
+    storageBackend.updateSheet(sheetId, action).then((res) => {
+      if (!res.ok) {
+        alert(res.error);
+        loadSheet();
+      }
+    });
+  };
+
+  const onDeleteColumn = (columnId: string) => {
+    const action: SheetAction = {
+      action: "delete_column",
+      params: {
+        columnId,
+      },
+    };
+    const updatedRes = migrator.reduce(sheetData, action);
+    if (!updatedRes.ok) {
+      alert("Failed to delete column: " + updatedRes.error);
+      return;
+    }
+    setSheetData(updatedRes.value);
+    storageBackend.updateSheet(sheetId, action).then((res) => {
+      if (!res.ok) {
+        alert("[Server Error] Failed to delete column: " + res.error);
+        loadSheet();
+      }
+    });
+  };
+
+  const onAddColumn = async () => {
+    const action: SheetAction = {
+      action: "add_column",
+      params: {
+        title: "Untitled column",
+        type: "text",
+        columnId: crypto.randomUUID(),
+      },
+    };
+
+    const updateRes = migrator.reduce(sheetData, action);
+    if (!updateRes.ok) {
+      alert("Failed to create column: " + updateRes.error);
+      return;
+    }
+    setSheetData(updateRes.value);
+    const res = await storageBackend.updateSheet(sheetId, action);
     if (!res.ok) {
-      alert(res.error);
-      loadSheets();
+      alert("[Server Error] Failed to create column: " + res.error);
+      loadSheet();
     }
   };
 
-  const addColumn = async () => {
-    const column = migrator.createColumn(crypto.randomUUID());
-    const updateRes = migrator.addColumn(sheetData, column);
-    if (updateRes.ok) {
-      setSheetData(updateRes.value);
-      const res = await storageBackend.createColumn(
-        sheetId,
-        column.id,
-        column.title,
-        column.type,
-      );
+  const onAddRow = async () => {
+    const action: SheetAction = {
+      action: "add_row",
+      params: {
+        rowId: crypto.randomUUID(),
+      },
+    };
+    const updatedRes = migrator.reduce(sheetData, action);
+    if (!updatedRes.ok) {
+      alert("Failed to create row: " + updatedRes.error);
+      return;
+    }
+    setSheetData(updatedRes.value);
+    storageBackend.updateSheet(sheetId, action).then((res) => {
       if (!res.ok) {
-        alert("Failed to create column on BE: " + res.error);
-        loadSheets();
+        alert("[Server Error] Failed to create row: " + res.error);
+        loadSheet();
       }
-    } else {
-      alert("Failed to create column on FE: " + updateRes.error);
-    }
+    });
   };
 
-  const addRow = async () => {
-    const id = crypto.randomUUID();
-    const updatedRes = migrator.addRow(sheetData, id);
-    if (updatedRes.ok) {
-      setSheetData({ ...sheetData, rows: updatedRes.value });
-      const res = await storageBackend.createRow(sheetId, id);
-      if (!res.ok) {
-        alert("Failed to create row on BE: " + res.error);
-        loadSheets();
-      }
-    } else {
-      alert("Failed to create row on FE: " + updatedRes.error);
-    }
-  };
-
-  const onDeleteRow = async (rowId: string) => {
+  const onDeleteRow = (rowId: string) => {
     if (!confirm("Are you sure you want to delete this row?")) {
       return;
     }
-
-    const updatedRes = migrator.deleteRow(sheetData, rowId);
-    if (updatedRes.ok) {
-      setSheetData({ ...sheetData, rows: updatedRes.value });
+    const action: SheetAction = {
+      action: "delete_row",
+      params: {
+        rowId,
+      },
+    };
+    const updatedRes = migrator.reduce(sheetData, action);
+    if (!updatedRes.ok) {
+      alert("Failed to delete row: " + updatedRes.error);
+      return;
     }
+    setSheetData(updatedRes.value);
+    storageBackend.updateSheet(sheetId, action).then((res) => {
+      if (!res.ok) {
+        alert("[Server Error] Failed to delete row: " + res.error);
+        loadSheet();
+      }
+    });
   };
 
   return (
@@ -233,7 +258,7 @@ export const SheetPage = () => {
                     onLeft={() =>
                       onUpdateColumn(column.id, [
                         {
-                          editType: migrator.ColumnEditType.Reorder,
+                          editType: "reorder",
                           toIndex: ind - 1,
                         },
                       ])
@@ -241,7 +266,7 @@ export const SheetPage = () => {
                     onRight={() =>
                       onUpdateColumn(column.id, [
                         {
-                          editType: migrator.ColumnEditType.Reorder,
+                          editType: "reorder",
                           toIndex: ind + 1,
                         },
                       ])
@@ -250,7 +275,7 @@ export const SheetPage = () => {
                 </Th>
               ))}
               <AddColumn>
-                <EditButton onClick={addColumn} title="Add Column">
+                <EditButton onClick={onAddColumn} title="Add Column">
                   <IoIosAdd />
                 </EditButton>
               </AddColumn>
@@ -283,7 +308,7 @@ export const SheetPage = () => {
 
         {sheetData.columns.length !== 0 && (
           <AddRowContainer>
-            <AddRowButton onClick={addRow} title="Add row">
+            <AddRowButton onClick={onAddRow} title="Add row">
               <IoIosAdd />
             </AddRowButton>
           </AddRowContainer>
@@ -297,11 +322,18 @@ export const SheetPage = () => {
         onClose={() => setCurrentEditColumnId(null)}
         columnId={currentEditColumnId}
         sheetData={sheetData}
-        onCommit={(actions) => {
+        onSubmit={(actions) => {
           if (!currentEditColumnId) {
             return;
           }
           onUpdateColumn(currentEditColumnId, actions);
+          setCurrentEditColumnId(null);
+        }}
+        onDelete={() => {
+          if (!currentEditColumnId) {
+            return;
+          }
+          onDeleteColumn(currentEditColumnId);
           setCurrentEditColumnId(null);
         }}
       />

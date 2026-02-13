@@ -1,6 +1,5 @@
 import { Err, Ok, Result } from "@app/shared/result";
-import { ColumnEditAction } from "@app/shared/sheetMigration";
-import { SheetMeta, SheetData, ColumnType } from "@app/shared/sheets";
+import { SheetMeta, SheetData } from "@app/shared/types/sheet";
 import { StorageBackend } from "./storageBackend";
 import * as migrator from "@app/shared/sheetMigration";
 
@@ -12,8 +11,10 @@ const getIndex = (): SheetMeta[] =>
 const setIndex = (index: SheetMeta[]) =>
   localStorage.setItem(KEY_INDEX, JSON.stringify(index));
 
-const getSheet = (sheetId: string): SheetData | undefined =>
-  JSON.parse(localStorage.getItem(KEY_SHEET(sheetId)) || "{}");
+const getSheet = (sheetId: string): SheetData | undefined => {
+  const sheet = localStorage.getItem(KEY_SHEET(sheetId));
+  return sheet ? JSON.parse(sheet) : undefined;
+};
 const setSheet = (sheetId: string, sheet: SheetData) =>
   localStorage.setItem(KEY_SHEET(sheetId), JSON.stringify(sheet));
 
@@ -50,30 +51,23 @@ export const localStorageBackend: StorageBackend = {
     setIndex(index);
     return Promise.resolve(Ok(sheet));
   },
-  getSheet: function (sheetId: string): Promise<Result<SheetData>> {
-    throw new Error("Function not implemented.");
+  getSheetData: function (sheetId: string): Promise<Result<SheetData>> {
+    const sheet = getSheet(sheetId);
+    if (!sheet) {
+      return Promise.resolve(Err("Sheet not found"));
+    }
+    return Promise.resolve(Ok(sheet));
   },
-  updateCell: function (
-    sheetId: string,
-    rowId: string,
-    columnId: string,
-    value: string,
-  ): Promise<Result<void>> {
-    throw new Error("Function not implemented.");
-  },
-  createColumn: function (
-    sheetId: string,
-    columnId: string,
-    columnTitle: string,
-    columnType: ColumnType,
-  ): Promise<Result<void>> {
-    throw new Error("Function not implemented.");
-  },
-  updateColumnBatched: function (
-    sheetId: string,
-    columnId: string,
-    payloads: ColumnEditAction[],
-  ): Promise<Result<void>> {
-    throw new Error("Function not implemented.");
+  updateSheet(sheetId, SheetAction) {
+    const sheet = getSheet(sheetId);
+    if (!sheet) {
+      return Promise.resolve(Err("Sheet not found"));
+    }
+    const updatedSheet = migrator.reduce(sheet, SheetAction);
+    if (!updatedSheet.ok) {
+      return Promise.resolve(Err(updatedSheet.error));
+    }
+    setSheet(sheetId, updatedSheet.value);
+    return Promise.resolve(Ok());
   },
 };
