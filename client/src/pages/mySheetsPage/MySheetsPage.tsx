@@ -13,6 +13,9 @@ import {
 } from "react-icons/tb";
 import { useStorageBackend } from "../../storageBackends/useBackend";
 import { localStorageBackend } from "../../storageBackends/localStorageBackend";
+import { COLORS } from "../../styles/colors";
+import { border } from "../../styles/mixins";
+import { DesktopHeader } from "../../components/desktop/DesktopHeader";
 
 interface Sheet {
   id: string;
@@ -29,27 +32,24 @@ const Background = styled.div`
   height: 100vh;
   width: 100vw;
 
-  background-color: #008483;
+  background-color: ${COLORS.DESKTOP};
 `;
 
 const FolderContainer = styled.div`
   margin: 32px;
   padding: 6px;
   color: black;
-  background-color: #c4c4c4;
+  background-color: ${COLORS.PANEL};
   height: 80%;
   width: 80%;
-  border-top: 3px solid white;
-  border-left: 3px solid white;
-  border-bottom: 3px solid black;
-  border-right: 3px solid black;
+  ${border({})}
   display: flex;
   flex-direction: column;
 `;
 
 const FolderHeader = styled.div`
   color: white;
-  background-color: #000082;
+  background-color: ${COLORS.HEADER};
   padding: 4px 8px;
   margin-bottom: 4px;
 `;
@@ -68,7 +68,7 @@ const HSep = styled.div`
   margin: 4px 0;
   width: 100%;
   height: 1px;
-  background-color: #4e4e4e;
+  background-color: ${COLORS.DARK};
   border-bottom: 1px solid white;
 `;
 
@@ -76,7 +76,7 @@ const VSep = styled.div`
   margin: 0;
   width: 1px;
   height: 80%;
-  background-color: #4e4e4e;
+  background-color: ${COLORS.DARK};
   border-right: 1px solid white;
 `;
 
@@ -84,13 +84,13 @@ const TabsContainer = styled.div`
   display: flex;
   align-items: center;
   gap: 0px;
-  background-color: #c4c4c4;
+  background-color: ${COLORS.PANEL};
   padding: 0;
 `;
 
 const TabButton = styled.a<{ $selected: boolean; $loading?: boolean }>`
   padding: 4px 8px;
-  padding-bottom: ${({ $selected }) => ($selected ? 6 : 4)}px;
+  padding-bottom: ${({ $selected }) => ($selected ? 8 : 4)}px;
   color: ${({ $selected }) => ($selected ? "black" : "#000000a2")};
   font-weight: ${({ $selected }) => ($selected ? 600 : 500)};
 
@@ -100,11 +100,9 @@ const TabButton = styled.a<{ $selected: boolean; $loading?: boolean }>`
   position: relative;
   z-index: ${({ $selected }) => ($selected ? 10 : 0)};
 
-  border-top: 2px solid white;
-  border-left: 2px solid white;
+  ${border({ thickness: 2 })};
   border-bottom: ${({ $selected }) =>
     $selected ? "2px solid #c4c4c4" : "none"};
-  border-right: 2px solid black;
 
   cursor: ${({ $loading }) => ($loading ? "wait" : "pointer")};
   user-select: none;
@@ -121,10 +119,7 @@ const FilesContainerOutline = styled.div`
   z-index: 5;
   margin-top: -2px;
 
-  border-top: 2px solid white;
-  border-left: 2px solid white;
-  border-bottom: 2px solid black;
-  border-right: 2px solid black;
+  ${border({ thickness: 2 })};
 `;
 
 const FilesContainer = styled.div`
@@ -351,9 +346,13 @@ export const MySheetsPage = () => {
   }, [getUrl, selectedSheet]);
 
   useEffect(() => {
-    document.title = "My Sheets | TaggedDB";
+    document.title = "My Sheets | MyTaggedDB";
 
     const onKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey) {
+        return;
+      }
+
       if (e.key === "Escape") {
         setSelectedSheet("");
       } else if (e.key === "n") {
@@ -372,6 +371,7 @@ export const MySheetsPage = () => {
 
   return (
     <Background onClick={() => setSelectedSheet("")}>
+      <DesktopHeader />
       <FolderContainer>
         <FolderHeader>
           <PiFoldersLight /> My Sheets
@@ -409,7 +409,7 @@ export const MySheetsPage = () => {
             }
             onClick={() => setUseLocalStorage()}
           >
-            <IconLocal /> localStorage://
+            <IconLocal /> localstorage:///
           </TabButton>
           {userRemotes.remotes.map((backend) => (
             <TabButton

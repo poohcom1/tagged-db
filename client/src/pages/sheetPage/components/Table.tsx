@@ -18,7 +18,7 @@ export const Th = styled.th`
   border-bottom: 2px solid #e5e7eb;
   font-weight: 600;
   background: #b0d3f8;
-  border: 1px solid #83818d;
+  border: 1px solid #7d7d80;
 `;
 
 export const Tbody = styled.tbody`
@@ -34,5 +34,5 @@ export const Tbody = styled.tbody`
 export const Td = styled.td`
   min-height: 50px;
   padding: 8px 12px;
-  border: 1px solid #83818d;
+  border: 1px solid #7d7d80;
 `;

@@ -12,22 +12,71 @@ import { BasicButton } from "../../components/BasicButton";
 import { EditButton } from "../../components/EditButton";
 import { ColumnEditAction, SheetAction } from "@app/shared/types/action";
 import { useStorageBackend } from "../../storageBackends/useBackend";
+import { COLORS } from "../../styles/colors";
+import { FaFileCsv } from "react-icons/fa6";
+import { IoMdClose } from "react-icons/io";
+import { border } from "../../styles/mixins";
+import { DesktopHeader } from "../../components/desktop/DesktopHeader";
 
 // Styles
+const Background = styled.div`
+  position: absolute;
+  height: 100vh;
+  width: 100vw;
+
+  background-color: ${COLORS.DESKTOP};
+`;
+
 const MainContainer = styled.div`
-  margin: 32px;
+  margin: 48px;
+
   display: flex;
+  flex-direction: column;
+
+  padding: 6px;
+  color: black;
+  background-color: ${COLORS.PANEL};
+  ${border({})};
+
+  width: fit-content;
+`;
+
+const FileHeader = styled.div`
+  color: white;
+  background-color: ${COLORS.HEADER};
+  padding: 4px 8px;
+  margin-bottom: 4px;
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const FileHeaderCloseButton = styled.button`
+  margin-left: auto;
+
+  background-color: ${COLORS.PANEL};
+  ${border({ thickness: 2 })};
+
+  &:hover {
+    cursor: pointer;
+  }
 `;
 
 const VContainer = styled.div`
   display: flex;
   flex-direction: column;
+
+  border-top: 2px solid grey;
+  border-left: 2px solid grey;
+  background-color: white;
+  padding: 8px;
   /* flex-grow: 1; */
 `;
 
 // - Right column container
 const AddColumnTh = styled.th`
-  background-color: white;
+  background-color: ${COLORS.WHITE};
   width: ${HEADER_HEIGHT}px;
   border: 2px dotted #0000006f;
 `;
@@ -71,9 +120,9 @@ export const SheetPage = () => {
 
   useEffect(() => {
     if (sheetData) {
-      document.title = sheetData.name + " | TaggedDB";
+      document.title = sheetData.name + " | MyTaggedDB";
     } else {
-      document.title = "Loading... | TaggedDB";
+      document.title = "Loading... | MyTaggedDB";
     }
   }, [sheetData]);
 
@@ -239,104 +288,119 @@ export const SheetPage = () => {
   };
 
   return (
-    <MainContainer>
-      <VContainer>
-        {/* Table */}
-        <Table style={{ flexGrow: 1 }}>
-          <Thead>
-            <tr>
-              {sheetData?.columns.map((column, ind) => (
-                <Th key={column.id}>
-                  <HeaderCell
-                    title={column.title}
-                    onEdit={() => {
-                      console.log("column edit: " + column.id);
-                      setCurrentEditColumnId(column.id);
-                    }}
-                    index={ind}
-                    total={sheetData.columns.length}
-                    onLeft={() =>
-                      onUpdateColumn(column.id, [
-                        {
-                          editType: "reorder",
-                          toIndex: ind - 1,
-                        },
-                      ])
-                    }
-                    onRight={() =>
-                      onUpdateColumn(column.id, [
-                        {
-                          editType: "reorder",
-                          toIndex: ind + 1,
-                        },
-                      ])
-                    }
-                  />
-                </Th>
-              ))}
-              <AddColumnTh>
-                <AddColumnButton onClick={onAddColumn} title="Add Column">
-                  <IoIosAdd />
-                </AddColumnButton>
-              </AddColumnTh>
-            </tr>
-          </Thead>
-          <Tbody>
-            {/* Rows */}
-            {sheetData.rows.map((row) => (
-              <tr key={row.id}>
-                {sheetData.columns.map((column) => (
-                  <Cell
-                    rowId={row.id}
-                    key={column.id}
-                    value={row.values[column.id]}
-                    columnInfo={column}
-                    onCellUpdate={onUpdateCell}
-                    tagSuggestions={sheetData.tagCache[column.id]}
-                  />
+    <Background>
+      <DesktopHeader />
+      <MainContainer>
+        <FileHeader>
+          <FaFileCsv /> {sheetData.name}.csv
+          <FileHeaderCloseButton
+            title={`Close ${sheetData.name}`}
+            onClick={() =>
+              (window.location.href = "/?" + storageBackend.queryParam)
+            }
+          >
+            <IoMdClose />
+          </FileHeaderCloseButton>
+        </FileHeader>
+
+        <VContainer>
+          {/* Table */}
+          <Table style={{ flexGrow: 1 }}>
+            <Thead>
+              <tr>
+                {sheetData?.columns.map((column, ind) => (
+                  <Th key={column.id}>
+                    <HeaderCell
+                      title={column.title}
+                      onEdit={() => {
+                        console.log("column edit: " + column.id);
+                        setCurrentEditColumnId(column.id);
+                      }}
+                      index={ind}
+                      total={sheetData.columns.length}
+                      onLeft={() =>
+                        onUpdateColumn(column.id, [
+                          {
+                            editType: "reorder",
+                            toIndex: ind - 1,
+                          },
+                        ])
+                      }
+                      onRight={() =>
+                        onUpdateColumn(column.id, [
+                          {
+                            editType: "reorder",
+                            toIndex: ind + 1,
+                          },
+                        ])
+                      }
+                    />
+                  </Th>
                 ))}
-
-                <Td key="_del">
-                  <DelRowContainer onClick={() => onDeleteRow(row.id)}>
-                    <EditButton>del</EditButton>
-                  </DelRowContainer>
-                </Td>
+                <AddColumnTh>
+                  <AddColumnButton onClick={onAddColumn} title="Add Column">
+                    <IoIosAdd />
+                  </AddColumnButton>
+                </AddColumnTh>
               </tr>
-            ))}
-          </Tbody>
-        </Table>
+            </Thead>
+            <Tbody>
+              {/* Rows */}
+              {sheetData.rows.map((row) => (
+                <tr key={row.id}>
+                  {sheetData.columns.map((column) => (
+                    <Cell
+                      rowId={row.id}
+                      key={column.id}
+                      value={row.values[column.id]}
+                      columnInfo={column}
+                      onCellUpdate={onUpdateCell}
+                      tagSuggestions={sheetData.tagCache[column.id]}
+                    />
+                  ))}
 
-        {sheetData.columns.length !== 0 && (
-          <AddRowContainer>
-            <AddRowButton onClick={onAddRow} title="Add row">
-              <IoIosAdd />
-            </AddRowButton>
-          </AddRowContainer>
-        )}
-      </VContainer>
+                  <Td key="_del">
+                    <DelRowContainer onClick={() => onDeleteRow(row.id)}>
+                      <EditButton>del</EditButton>
+                    </DelRowContainer>
+                  </Td>
+                </tr>
+              ))}
+            </Tbody>
+          </Table>
 
-      {/* Modals */}
-      <ColumnEdit
-        key={currentEditColumnId} // force state reset
-        isOpen={!!currentEditColumnId}
-        onClose={() => setCurrentEditColumnId(null)}
-        columnId={currentEditColumnId}
-        sheetData={sheetData}
-        onSubmit={(actions) => {
-          if (!currentEditColumnId) {
-            return;
-          }
-          onUpdateColumn(currentEditColumnId, actions);
-          setCurrentEditColumnId(null);
-        }}
-        onDelete={() => {
-          if (!currentEditColumnId) {
-            return;
-          }
-          onDeleteColumn(currentEditColumnId);
-          setCurrentEditColumnId(null);
-        }}
-      />
-    </MainContainer>
+          {sheetData.columns.length !== 0 && (
+            <AddRowContainer>
+              <AddRowButton onClick={onAddRow} title="Add row">
+                <IoIosAdd />
+              </AddRowButton>
+            </AddRowContainer>
+          )}
+        </VContainer>
+
+        {/* Modals */}
+        <ColumnEdit
+          key={currentEditColumnId} // force state reset
+          isOpen={!!currentEditColumnId}
+          onClose={() => setCurrentEditColumnId(null)}
+          columnId={currentEditColumnId}
+          sheetData={sheetData}
+          onSubmit={(actions) => {
+            if (!currentEditColumnId) {
+              return;
+            }
+            onUpdateColumn(currentEditColumnId, actions);
+            setCurrentEditColumnId(null);
+          }}
+          onDelete={() => {
+            if (!currentEditColumnId) {
+              return;
+            }
+            onDeleteColumn(currentEditColumnId);
+            setCurrentEditColumnId(null);
+          }}
+        />
+      </MainContainer>
+    </Background>
   );
 };
