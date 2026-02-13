@@ -1,9 +1,18 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import styled from "styled-components";
 import { FaFileCsv } from "react-icons/fa6";
 import { PiFoldersLight } from "react-icons/pi";
 import { BasicButton } from "../../components/BasicButton";
-import { storageBackend } from "../../lib/storageBackend";
+import { useRemoteBackends } from "../../storageBackends/useRemoteBackends";
+import { IoMdClose, IoMdAdd } from "react-icons/io";
+import { PiNetworkBold as IconLocal } from "react-icons/pi";
+import {
+  TbNetwork as IconNetwork,
+  TbNetworkOff as IconNetworkOff,
+  TbHourglass as IconProgress,
+} from "react-icons/tb";
+import { localStorageBackend } from "../../storageBackends/localStorageBackend";
+import { apiBackend } from "../../storageBackends/apiBackend";
 
 interface Sheet {
   id: string;
@@ -51,7 +60,7 @@ const ButtonContainer = styled.div`
   align-items: center;
 `;
 
-const FolderButton = styled(BasicButton)`
+const MenuButton = styled(BasicButton)`
   padding: 4px;
 `;
 
@@ -69,6 +78,52 @@ const VSep = styled.div`
   height: 80%;
   background-color: #4e4e4e;
   border-right: 1px solid white;
+`;
+
+const TabsContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0px;
+  background-color: #c4c4c4;
+  padding: 0;
+`;
+
+const TabButton = styled.a<{ $selected: boolean; $loading?: boolean }>`
+  padding: 4px 8px;
+  padding-bottom: ${({ $selected }) => ($selected ? 6 : 4)}px;
+  color: ${({ $selected }) => ($selected ? "black" : "#000000a2")};
+  font-weight: ${({ $selected }) => ($selected ? 600 : 500)};
+
+  border-top-right-radius: 5px;
+  border-top-left-radius: 5px;
+
+  position: relative;
+  z-index: ${({ $selected }) => ($selected ? 10 : 0)};
+
+  border-top: 2px solid white;
+  border-left: 2px solid white;
+  border-bottom: ${({ $selected }) =>
+    $selected ? "2px solid #c4c4c4" : "none"};
+  border-right: 2px solid black;
+
+  cursor: ${({ $loading }) => ($loading ? "wait" : "pointer")};
+`;
+
+const FilesContainerOutline = styled.div`
+  display: flex;
+  flex-direction: column;
+  background-color: #c4c4c4;
+  padding: 8px;
+  flex-grow: 1;
+
+  position: relative;
+  z-index: 5;
+  margin-top: -2px;
+
+  border-top: 2px solid white;
+  border-left: 2px solid white;
+  border-bottom: 2px solid black;
+  border-right: 2px solid black;
 `;
 
 const FilesContainer = styled.div`
@@ -137,22 +192,48 @@ const NameCell = styled.div`
   gap: 8px;
 `;
 
+// Component
+
 export const MySheetsPage = () => {
+  const remoteBackends = useRemoteBackends();
   const [sheets, setSheets] = useState<Sheet[]>([]);
   const [selectedSheet, setSelectedSheet] = useState<string>("");
   const [creatingSheet, setCreatingSheet] = useState<string>("");
 
-  const fetchSheets = () => {
-    storageBackend.getSheets().then((res) => {
-      if (res.ok) {
-        setSheets(res.value);
-      } else {
-        alert(res.error);
-      }
-    });
-  };
+  const [selectedStorage, setSelectedStorage] = useState<string>(""); // "" = localStorage
+  const [addingStorage, setAddingStorage] = useState<boolean>(false);
+  const [loadingStorages, setLoadingStorages] = useState<string[]>([]);
+  const [brokenStorages, setBrokenStorages] = useState<string[]>([]);
 
-  useEffect(fetchSheets, []);
+  const storageBackend = useMemo(() => {
+    if (selectedStorage) {
+      return apiBackend(selectedStorage);
+    } else {
+      return localStorageBackend;
+    }
+  }, [selectedStorage]);
+
+  const fetchSheets = useCallback(async () => {
+    setSheets([]);
+    setLoadingStorages((s) => [...s, selectedStorage]);
+    setBrokenStorages((s) => s.filter((s) => s !== selectedStorage));
+    const res = await storageBackend.getSheets();
+    setLoadingStorages((s) => s.filter((s) => s !== selectedStorage));
+    if (res.ok) {
+      setSheets(res.value);
+      setSelectedSheet("");
+    } else if (remoteBackends.backends.find((b) => b.url === selectedStorage)) {
+      setBrokenStorages((s) => [...s, selectedStorage]);
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      alert(
+        `Failed to connect to remote: ${selectedStorage}.\n\nReason: ${res.error}`,
+      );
+    }
+  }, [remoteBackends.backends, selectedStorage, storageBackend]);
+
+  useEffect(() => {
+    fetchSheets();
+  }, [fetchSheets]);
 
   const onCreateSheet = useCallback(() => {
     const title = prompt("Enter sheet title:");
@@ -173,7 +254,7 @@ export const MySheetsPage = () => {
         fetchSheets();
       }
     });
-  }, [sheets]);
+  }, [fetchSheets, sheets, storageBackend]);
 
   const onRenameSheet = useCallback(() => {
     if (!selectedSheet) {
@@ -198,7 +279,7 @@ export const MySheetsPage = () => {
         fetchSheets();
       }
     });
-  }, [sheets, selectedSheet]);
+  }, [selectedSheet, sheets, storageBackend, fetchSheets]);
 
   const onDeleteSheet = useCallback(() => {
     if (!selectedSheet) {
@@ -221,7 +302,7 @@ export const MySheetsPage = () => {
         }
       });
     }
-  }, [sheets, selectedSheet]);
+  }, [selectedSheet, sheets, storageBackend, fetchSheets]);
 
   const onOpenSheet = useCallback(() => {
     if (!selectedSheet) {
@@ -258,54 +339,144 @@ export const MySheetsPage = () => {
           <PiFoldersLight /> My Sheets
         </FolderHeader>
         <ButtonContainer>
-          <FolderButton onClick={onCreateSheet} disabled={!!creatingSheet}>
+          <MenuButton onClick={onCreateSheet} disabled={!!creatingSheet}>
             <u>N</u>ew
-          </FolderButton>
-          <VSep />{" "}
-          <FolderButton onClick={onOpenSheet} disabled={!selectedSheet}>
+          </MenuButton>
+          <VSep />
+          <MenuButton onClick={onOpenSheet} disabled={!selectedSheet}>
             <u>O</u>pen
-          </FolderButton>
-          <FolderButton onClick={onRenameSheet} disabled={!selectedSheet}>
+          </MenuButton>
+          <MenuButton onClick={onRenameSheet} disabled={!selectedSheet}>
             <u>R</u>ename
-          </FolderButton>
-          <FolderButton onClick={onDeleteSheet} disabled={!selectedSheet}>
+          </MenuButton>
+          <MenuButton onClick={onDeleteSheet} disabled={!selectedSheet}>
             <u>D</u>elete
-          </FolderButton>
+          </MenuButton>
         </ButtonContainer>
         <HSep />
-        <FilesContainer>
-          <Columns>
-            <div>Name</div>
-            <div>Updated</div>
-            <div>Created</div>
-          </Columns>
 
-          {sheets.map((sheet) => (
-            <File
-              key={sheet.id}
-              href={
-                sheet.id === selectedSheet ? `/sheet/${sheet.id}` : undefined
-              }
-              onClick={(e) => {
-                e.stopPropagation();
-                if (sheet.id !== selectedSheet) {
-                  setTimeout(() => setSelectedSheet(sheet.id), 0);
-                }
-              }}
-              $selected={sheet.id === selectedSheet}
+        <TabsContainer>
+          <TabButton
+            key="localStorage"
+            $selected={!selectedStorage && !addingStorage}
+            onClick={() => setSelectedStorage("")}
+          >
+            <IconLocal /> localStorage://
+          </TabButton>
+          {remoteBackends.backends.map((backend) => (
+            <TabButton
+              key={backend.url}
+              $selected={selectedStorage === backend.url && !addingStorage}
+              $loading={loadingStorages.includes(backend.url)}
+              onClick={() => setSelectedStorage(backend.url)}
+              style={{ display: "flex", alignItems: "center", gap: "4px" }}
             >
-              <NameCell>
-                <FaFileCsv />
-                {sheet.name}
-              </NameCell>
-              <Time dateTime={sheet.updated} />
-              <Time dateTime={sheet.created} />
-            </File>
+              {loadingStorages.includes(backend.url) ? (
+                <IconProgress />
+              ) : brokenStorages.includes(backend.url) ? (
+                <IconNetworkOff />
+              ) : (
+                <IconNetwork />
+              )}
+              {backend.url}/
+              <BasicButton
+                style={{ display: "flex", alignItems: "center" }}
+                onClick={(e) => {
+                  if (
+                    !confirm(
+                      `Are you sure you want to remove backend: ${backend.url}?`,
+                    )
+                  ) {
+                    return;
+                  }
+
+                  e.stopPropagation();
+                  remoteBackends.remove(backend);
+                  setBrokenStorages((s) => s.filter((s) => s !== backend.url));
+                }}
+              >
+                <IoMdClose style={{ marginLeft: "auto" }} />
+              </BasicButton>
+            </TabButton>
           ))}
-          {creatingSheet && (
-            <FileCreating key="_">Creating "{creatingSheet}"...</FileCreating>
-          )}
-        </FilesContainer>
+          <TabButton
+            key="add"
+            $selected={addingStorage}
+            title="Add remote backend"
+            onClick={async () => {
+              setAddingStorage(true);
+              await new Promise((resolve) => setTimeout(resolve, 0));
+              let url = prompt("Remote backend URL:");
+              if (
+                url &&
+                (url.startsWith("http://") || url.startsWith("https://"))
+              ) {
+                if (url.endsWith("/")) {
+                  url = url.slice(0, -1);
+                }
+
+                remoteBackends.add({
+                  url,
+                });
+                setSelectedStorage(url);
+              } else {
+                if (url) {
+                  alert("Invalid URL: " + url);
+                }
+              }
+              setAddingStorage(false);
+            }}
+          >
+            <IoMdAdd />
+          </TabButton>
+        </TabsContainer>
+        <FilesContainerOutline>
+          <FilesContainer>
+            <Columns>
+              <div>Name</div>
+              <div>Updated</div>
+              <div>Created</div>
+            </Columns>
+
+            {loadingStorages.includes(selectedStorage) && (
+              <FileCreating key="_">Loading remote...</FileCreating>
+            )}
+
+            {sheets.map((sheet, ind) => (
+              <File
+                tabIndex={ind}
+                key={sheet.id}
+                href={
+                  sheet.id === selectedSheet ? `/sheet/${sheet.id}` : undefined
+                }
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (sheet.id !== selectedSheet) {
+                    setTimeout(() => setSelectedSheet(sheet.id), 0);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    if (sheet.id !== selectedSheet) {
+                      setTimeout(() => setSelectedSheet(sheet.id), 0);
+                    }
+                  }
+                }}
+                $selected={sheet.id === selectedSheet}
+              >
+                <NameCell>
+                  <FaFileCsv />
+                  {sheet.name}
+                </NameCell>
+                <Time dateTime={sheet.updated} />
+                <Time dateTime={sheet.created} />
+              </File>
+            ))}
+            {creatingSheet && (
+              <FileCreating key="_">Creating "{creatingSheet}"...</FileCreating>
+            )}
+          </FilesContainer>
+        </FilesContainerOutline>
       </FolderContainer>
     </Background>
   );

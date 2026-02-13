@@ -8,7 +8,7 @@ import { useParams } from "react-router-dom";
 import { IoIosAdd } from "react-icons/io";
 import { HeaderCell } from "./components/HeaderCell";
 import { ColumnEdit } from "./components/ColumnEdit";
-import { storageBackend } from "../../lib/storageBackend";
+import { storageBackend } from "../../storageBackends/storageBackend";
 import { BasicButton } from "../../components/BasicButton";
 import { EditButton } from "../../components/EditButton";
 import { ColumnEditAction, SheetAction } from "@app/shared/types/action";
@@ -26,7 +26,7 @@ const VContainer = styled.div`
 `;
 
 // - Right column container
-const AddColumn = styled.th`
+const AddColumnTh = styled.th`
   background-color: white;
   width: ${HEADER_HEIGHT}px;
   border: 2px dotted #0000006f;
@@ -274,11 +274,11 @@ export const SheetPage = () => {
                   />
                 </Th>
               ))}
-              <AddColumn>
-                <EditButton onClick={onAddColumn} title="Add Column">
+              <AddColumnTh>
+                <AddColumnButton onClick={onAddColumn} title="Add Column">
                   <IoIosAdd />
-                </EditButton>
-              </AddColumn>
+                </AddColumnButton>
+              </AddColumnTh>
             </tr>
           </Thead>
           <Tbody>

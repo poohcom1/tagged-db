@@ -2,21 +2,21 @@ import { Err, Ok, Result } from "@app/shared/result";
 import { SheetMeta, SheetData } from "@app/shared/types/sheet";
 import { StorageBackend } from "./storageBackend";
 import * as migrator from "@app/shared/sheetMigration";
-
-const KEY_INDEX = "tagged_db.index";
-const KEY_SHEET = (sheetId: string) => `tagged_db.sheet.${sheetId}`;
+import { LS_KEY_INDEX, LS_KEY_SHEET } from "./constants";
 
 const getIndex = (): SheetMeta[] =>
-  JSON.parse(localStorage.getItem(KEY_INDEX) || "[]");
+  JSON.parse(localStorage.getItem(LS_KEY_INDEX) || "[]");
 const setIndex = (index: SheetMeta[]) =>
-  localStorage.setItem(KEY_INDEX, JSON.stringify(index));
+  localStorage.setItem(LS_KEY_INDEX, JSON.stringify(index));
 
 const getSheet = (sheetId: string): SheetData | undefined => {
-  const sheet = localStorage.getItem(KEY_SHEET(sheetId));
+  const sheet = localStorage.getItem(LS_KEY_SHEET(sheetId));
   return sheet ? JSON.parse(sheet) : undefined;
 };
 const setSheet = (sheetId: string, sheet: SheetData) =>
-  localStorage.setItem(KEY_SHEET(sheetId), JSON.stringify(sheet));
+  localStorage.setItem(LS_KEY_SHEET(sheetId), JSON.stringify(sheet));
+const removeSheet = (sheetId: string) =>
+  localStorage.removeItem(LS_KEY_SHEET(sheetId));
 
 export const localStorageBackend: StorageBackend = {
   getSheets: async (): Promise<Result<SheetMeta[]>> => {
@@ -41,6 +41,7 @@ export const localStorageBackend: StorageBackend = {
     }
     index.splice(index.indexOf(sheet), 1);
     setIndex(index);
+    removeSheet(id);
     return Promise.resolve(Ok());
   },
   createSheet: function (title: string): Promise<Result<SheetMeta>> {
@@ -49,6 +50,7 @@ export const localStorageBackend: StorageBackend = {
     const sheet = migrator.createSheet(uuid, title);
     index.push(sheet);
     setIndex(index);
+    setSheet(uuid, sheet);
     return Promise.resolve(Ok(sheet));
   },
   getSheetData: function (sheetId: string): Promise<Result<SheetData>> {

@@ -6,5 +6,5 @@ export const BaseButton = styled.button`
   padding: 0;
   font: inherit;
   cursor: pointer;
-  outline: inherit;
+  /* outline: inherit; */
 `;
