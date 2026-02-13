@@ -1,4 +1,4 @@
-import { Err, Ok, Result } from "./result";
+import { Err, Ok, Result } from "./types/result";
 import { ColumnType } from "./types/sheet";
 
 export function validateType(type: string): type is ColumnType {

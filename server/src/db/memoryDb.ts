@@ -1,6 +1,6 @@
 import * as migration from "@app/shared/sheetMigration";
 import type { DBInterface } from "../types/db.js";
-import { Err, Ok, Result } from "@app/shared/result";
+import { Err, Ok, Result } from "@app/shared/types/result";
 import { type SheetMeta, type SheetData } from "@app/shared/types/sheet";
 import { resolve } from "path";
 import { writeFile } from "fs/promises";
@@ -8,44 +8,44 @@ import { writeFile } from "fs/promises";
 export const memoryDb: DBInterface = {
   async createSheet(title: string) {
     if (Object.values(db.sheetData).find((s) => s.name === title)) {
-      return Err("Sheet already exists");
+      throw new Error("Sheet already exists");
     }
 
     const uuid = crypto.randomUUID();
     const sheet = migration.createSheet(uuid, title);
     db.sheetData[uuid] = sheet;
-    return Ok(sheet);
+    return sheet;
   },
   async renameSheet(sheetId: string, title: string) {
     const sheet = db.sheetData[sheetId];
     if (!sheet) {
-      return Err("Sheet not found");
+      throw new Error("Sheet not found");
     }
     sheet.name = title;
     db.sheetData[sheetId] = sheet;
-    return Ok(sheet);
   },
   async deleteSheet(sheetId: string) {
     delete db.sheetData[sheetId];
-    return Ok();
   },
   async getSheets() {
-    return Ok(Object.values(db.sheetData));
+    return Object.values(db.sheetData);
   },
   async getSheetData(sheetId: string) {
-    return Result(db.sheetData[sheetId], "Sheet not found: " + sheetId);
+    if (!db.sheetData[sheetId]) {
+      throw new Error("Sheet not found: " + sheetId);
+    }
+    return db.sheetData[sheetId];
   },
   async updateSheet(id, SheetAction) {
     const sheet = db.sheetData[id];
     if (!sheet) {
-      return Err("Sheet not found");
+      throw new Error("Sheet not found");
     }
     const res = migration.reduce(sheet, SheetAction);
     if (!res.ok) {
-      return res;
+      throw new Error(res.error);
     }
     db.sheetData[id] = res.value;
-    return Ok();
   },
 };
 

@@ -10,8 +10,9 @@ import {
   UPDATE_SHEET,
   type EndpointOf,
 } from "@app/shared/endpoints";
-import { unwrapOrThrow } from "@app/shared/result";
+import { unwrapOrThrow } from "@app/shared/types/result";
 import { errorToString } from "@app/shared/util";
+import { jsonFsDb } from "./db/jsonFsDb.js";
 
 const server = Fastify({
   logger: true,
@@ -30,40 +31,33 @@ server.get("/api/ping", async function handler(request, reply) {
 });
 
 // My Sheets
-const db = memoryDb;
+const db = jsonFsDb;
 
 server.get<EndpointOf<typeof GET_SHEETS>>(
   GET_SHEETS.url,
   async function handler(request, reply) {
-    const res = await db.getSheets();
-    return unwrapOrThrow(res);
+    return await db.getSheets();
   },
 );
 
 server.post<EndpointOf<typeof CREATE_SHEET>>(
   CREATE_SHEET.url,
   async function handler(request, reply) {
-    const res = await db.createSheet(request.body.title);
-    return unwrapOrThrow(res);
+    return await db.createSheet(request.body.title);
   },
 );
 
 server.patch<EndpointOf<typeof RENAME_SHEET>>(
   RENAME_SHEET.url,
   async function handler(request, reply) {
-    const res = await db.renameSheet(
-      request.params.sheetId,
-      request.body.title,
-    );
-    unwrapOrThrow(res);
+    await db.renameSheet(request.params.sheetId, request.body.title);
   },
 );
 
 server.delete<EndpointOf<typeof DELETE_SHEET>>(
   DELETE_SHEET.url,
   async function handler(request, reply) {
-    const res = await db.deleteSheet(request.params.sheetId);
-    unwrapOrThrow(res);
+    await db.deleteSheet(request.params.sheetId);
   },
 );
 
@@ -71,26 +65,21 @@ server.delete<EndpointOf<typeof DELETE_SHEET>>(
 server.get<EndpointOf<typeof GET_SHEET_DATA>>(
   GET_SHEET_DATA.url,
   async function handler(request, reply) {
-    const sheetData = await db.getSheetData(request.params.sheetId);
-    return unwrapOrThrow(sheetData);
+    return await db.getSheetData(request.params.sheetId);
   },
 );
 
 server.patch<EndpointOf<typeof UPDATE_SHEET>>(
   UPDATE_SHEET.url,
   async function handler(request, reply) {
-    const res = await db.updateSheet(
-      request.params.sheetId,
-      request.body.action,
-    );
-    unwrapOrThrow(res);
+    await db.updateSheet(request.params.sheetId, request.body.action);
   },
 );
 
 // Error
 server.setErrorHandler((error, request, reply) => {
   const message = errorToString(error);
-  console.error("Fastify error", message);
+  console.error("[server error]", message);
   reply.code(500).type("text/plain").send(message);
 });
 

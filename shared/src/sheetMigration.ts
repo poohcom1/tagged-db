@@ -1,4 +1,4 @@
-import { Err, Ok, Result } from "./result";
+import { Err, Ok, Result } from "./types/result";
 import type { Column, ColumnType, ColumnValue, SheetData } from "./types/sheet";
 import { parseTags, validateType } from "./sheetValidation";
 import { ColumnEditAction, SheetAction, SheetActionType } from "./types/action";
@@ -79,7 +79,7 @@ export function updateTimestamp(sheetData: SheetData): SheetData {
   return { ...sheetData, updated: new Date().toISOString() };
 }
 
-// Defaults
+// FS
 export function createSheet(id: string, name: string): SheetData {
   return {
     id,
@@ -103,7 +103,11 @@ export function createSheet(id: string, name: string): SheetData {
   };
 }
 
-// Migration
+export function renameSheet(sheetData: SheetData, name: string): SheetData {
+  return { ...sheetData, name };
+}
+
+// Helper
 function updateTagCache(sheetData: SheetData): SheetData["tagCache"] {
   const tagCache: SheetData["tagCache"] = {};
 
@@ -198,7 +202,6 @@ function updateColumn(
       columns.splice(payload.toIndex, 0, column);
       break;
   }
-  console.log(columns);
 
   return Ok({ ...sheetData, columns });
 }

@@ -1,4 +1,4 @@
-import { Result } from "@app/shared/result";
+import { Result } from "@app/shared/types/result";
 import { SheetData, SheetMeta } from "@app/shared/types/sheet";
 import { SheetAction } from "@app/shared/types/action";
 

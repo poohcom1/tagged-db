@@ -1,4 +1,4 @@
-import { Err, Ok, Result } from "@app/shared/result";
+import { Err, Ok, Result } from "@app/shared/types/result";
 import { SheetMeta, SheetData } from "@app/shared/types/sheet";
 import { StorageBackend } from "./storageBackend";
 import * as migrator from "@app/shared/sheetMigration";
