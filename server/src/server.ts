@@ -1,5 +1,5 @@
 import Fastify from "fastify";
-import fastifyStatic from "@fastify/static";
+import cors from "@fastify/cors";
 import path from "path";
 import { memoryDb } from "./db/memoryDb.js";
 import {
@@ -21,21 +21,16 @@ const server = Fastify({
 // Static
 const __dirname = path.resolve(path.dirname("public"));
 
-server.register(fastifyStatic, {
-  root: path.join(__dirname, "public"), // Absolute path to your static files
-  prefix: "/", // Optional: a URL path prefix (default is '/')
+await server.register(cors, {
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type"],
 });
 
 // Declare a route
-server.get("/", async function handler(request, reply) {
-  return reply.sendFile("index.html");
-});
-
 server.get("/api/ping", async function handler(request, reply) {
   return "pong";
 });
-
-// Endpoints
 
 // My Sheets
 const db = memoryDb;
