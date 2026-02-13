@@ -1,17 +1,10 @@
 import { Column, ColumnValue } from "@app/shared/sheets";
 import React, { useCallback, useMemo } from "react";
 import { Td } from "./Table";
-import styled from "styled-components";
 import { TextEdit } from "./cellEdit/TextEdit";
 import { NumberEdit } from "./cellEdit/NumberEdit";
 import { EnumEdit } from "./cellEdit/EnumEdit";
 import { TagEdit } from "./cellEdit/TagEdit";
-
-const Container = styled.div`
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-`;
 
 interface Prop {
   rowId: string;
@@ -58,10 +51,6 @@ export const Cell = React.memo(
       }
     }, [columnInfo, value, tagSuggestions, rowId, onChanged]);
 
-    return (
-      <Td>
-        <Container>{EditComponent}</Container>
-      </Td>
-    );
+    return <Td>{EditComponent}</Td>;
   },
 );

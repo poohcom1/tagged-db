@@ -40,6 +40,7 @@ export const TextEdit = ({ value, onChange }: Props) => {
   }, [value]);
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const saveRef = useRef<HTMLButtonElement>(null);
 
   return (
     <Container>
@@ -66,12 +67,16 @@ export const TextEdit = ({ value, onChange }: Props) => {
         onChange={(e) => {
           setCurrentValue(e.target.value);
         }}
-        onBlur={() => {
+        onBlur={(e) => {
+          if (e.relatedTarget === saveRef.current) {
+            return;
+          }
           onChange?.(currentValue ?? "");
           setEditting(false);
         }}
       />
       <CustomEditButton
+        ref={saveRef}
         onClick={() => {
           if (!editting) {
             setEditting(true);
