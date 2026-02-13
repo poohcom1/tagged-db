@@ -99,23 +99,20 @@ export const TagEdit = ({
   if (!editing) {
     return (
       <Container>
-        {tags.map((tag, ind) => (
-          <>
+        <div style={{ maxWidth: "150px" }}>
+          {tags.map((tag, ind) => (
             <EditButton
               key={tag}
               onClick={() => {
                 onTagClicked?.(tag);
               }}
+              style={{ marginRight: "4px", fontSize: "small" }}
             >
               {tag}
+              {ind < tags.length - 1 && ","}
             </EditButton>
-            {ind < tags.length - 1 && (
-              <div key={`${tag}_comma`} style={{ marginRight: "4px" }}>
-                ,
-              </div>
-            )}
-          </>
-        ))}
+          ))}
+        </div>
         <CustomEditButton
           onClick={() => {
             setEditing(true);
