@@ -1,22 +1,43 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { EditButton } from "../../../../components/EditButton";
 
-const Text = styled.span`
-  padding: 8px 12px;
-  font-weight: 600;
+const Container = styled.div`
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+  gap: 4px;
+`;
+
+const Input = styled.input`
+  flex-grow: 1;
+
+  &:read-only {
+    font-weight: 500;
+    border: 2px solid transparent;
+    background: transparent;
+    // Hide arrows
+    -moz-appearance: textfield;
+    -webkit-inner-spin-button,
+    -webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+  }
+`;
+
+const CustomEditButton = styled(EditButton)`
+  margin-left: auto;
+  text-align: right;
+  min-width: 25px;
 `;
 
 interface Props {
   onChange?: (value: string) => void;
-  onCancel?: () => void;
   value?: string;
-  min?: number;
-  max?: number;
-  step?: number;
 }
 
-export const NumberEdit = ({ value, onChange, min, max, step }: Props) => {
+export const NumberEdit = ({ value, onChange }: Props) => {
   const [currentValue, setCurrentValue] = useState(value);
   const [editting, setEditting] = useState(false);
 
@@ -24,21 +45,29 @@ export const NumberEdit = ({ value, onChange, min, max, step }: Props) => {
     setCurrentValue(value);
   }, [value]);
 
-  if (editting) {
-    return (
-      <input
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  return (
+    <Container>
+      <Input
         type="number"
-        min={min}
-        max={max}
-        step={step}
+        ref={inputRef}
+        readOnly={!editting}
         value={currentValue}
-        autoFocus
         onKeyDown={(e) => {
           if (e.key === "Enter") {
             onChange?.(currentValue ?? "");
             setEditting(false);
+            inputRef.current?.blur();
           } else if (e.key === "Escape") {
             setEditting(false);
+            inputRef.current?.blur();
+          }
+        }}
+        onDoubleClick={() => {
+          if (!editting) {
+            setEditting(true);
+            inputRef.current?.select();
           }
         }}
         onChange={(e) => {
@@ -49,19 +78,20 @@ export const NumberEdit = ({ value, onChange, min, max, step }: Props) => {
           setEditting(false);
         }}
       />
-    );
-  }
-
-  return (
-    <>
-      <Text>{value}</Text>
-      <EditButton
+      <CustomEditButton
         onClick={() => {
-          setEditting(true);
+          if (!editting) {
+            setEditting(true);
+            inputRef.current?.select();
+          } else {
+            onChange?.(currentValue ?? "");
+            setEditting(false);
+            inputRef.current?.blur();
+          }
         }}
       >
-        edit
-      </EditButton>
-    </>
+        {!editting ? "edit" : "save"}
+      </CustomEditButton>
+    </Container>
   );
 };

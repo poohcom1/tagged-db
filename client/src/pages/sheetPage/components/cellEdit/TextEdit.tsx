@@ -1,10 +1,29 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { EditButton } from "../../../../components/EditButton";
 
-const Text = styled.span`
-  padding: 8px 12px;
-  font-weight: 600;
+const Container = styled.div`
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+  gap: 4px;
+`;
+
+const Input = styled.input`
+  flex-grow: 1;
+
+  &:read-only {
+    font-weight: 500;
+    border: 2px solid transparent;
+    background: transparent;
+    outline: none;
+  }
+`;
+
+const CustomEditButton = styled(EditButton)`
+  margin-left: auto;
+  text-align: right;
+  min-width: 25px;
 `;
 
 interface Props {
@@ -20,17 +39,28 @@ export const TextEdit = ({ value, onChange }: Props) => {
     setCurrentValue(value);
   }, [value]);
 
-  if (editting) {
-    return (
-      <input
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  return (
+    <Container>
+      <Input
+        ref={inputRef}
+        readOnly={!editting}
         value={currentValue}
-        autoFocus
         onKeyDown={(e) => {
           if (e.key === "Enter") {
             onChange?.(currentValue ?? "");
             setEditting(false);
+            inputRef.current?.blur();
           } else if (e.key === "Escape") {
             setEditting(false);
+            inputRef.current?.blur();
+          }
+        }}
+        onDoubleClick={() => {
+          if (!editting) {
+            setEditting(true);
+            inputRef.current?.select();
           }
         }}
         onChange={(e) => {
@@ -41,19 +71,20 @@ export const TextEdit = ({ value, onChange }: Props) => {
           setEditting(false);
         }}
       />
-    );
-  }
-
-  return (
-    <>
-      <Text>{value}</Text>
-      <EditButton
+      <CustomEditButton
         onClick={() => {
-          setEditting(true);
+          if (!editting) {
+            setEditting(true);
+            inputRef.current?.select();
+          } else {
+            onChange?.(currentValue ?? "");
+            setEditting(false);
+            inputRef.current?.blur();
+          }
         }}
       >
-        edit
-      </EditButton>
-    </>
+        {!editting ? "edit" : "save"}
+      </CustomEditButton>
+    </Container>
   );
 };

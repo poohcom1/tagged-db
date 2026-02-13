@@ -5,6 +5,7 @@ export const HEADER_HEIGHT = 36;
 export const Table = styled.table`
   border-collapse: collapse;
   font-size: 14px;
+  table-layout: fixed;
 `;
 
 export const Thead = styled.thead`
@@ -17,6 +18,7 @@ export const Th = styled.th`
   padding: 8px 12px;
   border-bottom: 2px solid #e5e7eb;
   font-weight: 600;
+  border: 1px solid #555555;
 `;
 
 export const Tbody = styled.tbody`
@@ -30,6 +32,7 @@ export const Tbody = styled.tbody`
 `;
 
 export const Td = styled.td`
+  min-height: 50px;
   padding: 8px 12px;
-  border-bottom: 1px solid #e5e7eb;
+  border: 1px solid #555555;
 `;

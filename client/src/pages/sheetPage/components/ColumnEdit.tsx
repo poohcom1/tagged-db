@@ -114,35 +114,6 @@ export const ColumnEdit = ({
       break;
     case "number":
       AdvancedEdit = null;
-      // <>
-      //   <EditRow label="Max">
-      //     <input
-      //       type="number"
-      //       id="max"
-      //       name="max"
-      //       placeholder="Leave empty for none"
-      //       defaultValue={column.max}
-      //     />
-      //   </EditRow>
-      //   <EditRow label="Min">
-      //     <input
-      //       type="number"
-      //       id="min"
-      //       name="min"
-      //       placeholder="Leave empty for none"
-      //       defaultValue={column.min}
-      //     />
-      //   </EditRow>
-      //   <EditRow label="Step">
-      //     <input
-      //       type="number"
-      //       id="step"
-      //       name="step"
-      //       placeholder="Leave empty for none"
-      //       defaultValue={column.step}
-      //     />
-      //   </EditRow>
-      // </>
       break;
     case "enum": {
       const onEnumRenamed = (id: string, name: string) =>

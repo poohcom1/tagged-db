@@ -29,6 +29,7 @@ interface TextColumn extends BaseColumn {
 
 interface NumberColumn extends BaseColumn {
   type: "number";
+  // unused
   min?: number;
   max?: number;
   step?: number;

@@ -36,15 +36,7 @@ export const Cell = React.memo(
         case "text":
           return <TextEdit value={value} onChange={onChanged} />;
         case "number":
-          return (
-            <NumberEdit
-              value={value}
-              onChange={onChanged}
-              min={columnInfo.min}
-              max={columnInfo.max}
-              step={columnInfo.step}
-            />
-          );
+          return <NumberEdit value={value} onChange={onChanged} />;
         case "enum":
           return (
             <EnumEdit
