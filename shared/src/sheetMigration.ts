@@ -52,13 +52,15 @@ export enum ColumnEditType {
   ChangeType,
   Delete,
   EnumUpdate,
+  Reorder,
 }
 
 export type ColumnEditAction =
   | ColumnRenameAction
   | ColumnChangeTypeAction
   | ColumnDeleteAction
-  | ColumnEnumUpdateAction;
+  | ColumnEnumUpdateAction
+  | ColumnReorderAction;
 
 interface BaseColumnAction {
   editType: ColumnEditType;
@@ -84,6 +86,11 @@ interface ColumnEnumUpdateAction extends BaseColumnAction {
   // ID = original values
   idOrder: string[];
   idToNames: Record<string, string>;
+}
+
+interface ColumnReorderAction extends BaseColumnAction {
+  editType: ColumnEditType.Reorder;
+  toIndex: number;
 }
 
 export function updateColumn(
@@ -152,9 +159,18 @@ export function updateColumn(
 
       column.options = updatedOptions;
       break;
-  }
+    case ColumnEditType.Reorder:
+      if (payload.toIndex < 0 || payload.toIndex >= columns.length) {
+        return Err("Invalid index: " + payload.toIndex);
+      }
 
-  return Ok({ ...updateTimestamp(sheetData), columns });
+      columns.splice(columns.indexOf(column), 1);
+      columns.splice(payload.toIndex, 0, column);
+      break;
+  }
+  console.log(columns);
+
+  return Ok({ ...sheetData, columns });
 }
 
 export function createColumn(

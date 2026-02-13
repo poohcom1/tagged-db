@@ -148,10 +148,6 @@ server.patch<EndpointOf<typeof UPDATE_COLUMN_BATCHED>>(
 );
 
 // Error
-server.addHook("onRequest", async (req) => {
-  console.log("[INCOMING]:", req.method, req.url);
-});
-
 server.setErrorHandler((error, request, reply) => {
   const message = errorToString(error);
   console.error("Fastify error", message);

@@ -220,7 +220,7 @@ export const SheetPage = () => {
         <Table style={{ flexGrow: 1 }}>
           <Thead>
             <tr>
-              {sheetData?.columns.map((column) => (
+              {sheetData?.columns.map((column, ind) => (
                 <Th key={column.id}>
                   <HeaderCell
                     title={column.title}
@@ -228,13 +228,31 @@ export const SheetPage = () => {
                       console.log("column edit: " + column.id);
                       setCurrentEditColumnId(column.id);
                     }}
+                    index={ind}
+                    total={sheetData.columns.length}
+                    onLeft={() =>
+                      onUpdateColumn(column.id, [
+                        {
+                          editType: migrator.ColumnEditType.Reorder,
+                          toIndex: ind - 1,
+                        },
+                      ])
+                    }
+                    onRight={() =>
+                      onUpdateColumn(column.id, [
+                        {
+                          editType: migrator.ColumnEditType.Reorder,
+                          toIndex: ind + 1,
+                        },
+                      ])
+                    }
                   />
                 </Th>
               ))}
               <AddColumn>
-                <AddColumnButton onClick={addColumn} title="Add Column">
+                <EditButton onClick={addColumn} title="Add Column">
                   <IoIosAdd />
-                </AddColumnButton>
+                </EditButton>
               </AddColumn>
             </tr>
           </Thead>
