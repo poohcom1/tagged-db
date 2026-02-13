@@ -280,6 +280,7 @@ export const ColumnEdit = ({
         <ButtonRow>
           <button onClick={onCommitAction}>Update</button>
           <button
+            disabled={sheetData.columns.length === 1}
             onClick={() => {
               if (
                 confirm(

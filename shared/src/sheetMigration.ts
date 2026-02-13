@@ -79,20 +79,31 @@ export function updateTimestamp(sheetData: SheetData): SheetData {
   return { ...sheetData, updated: new Date().toISOString() };
 }
 
-// Sheets
+// Defaults
 export function createSheet(id: string, name: string): SheetData {
   return {
     id,
     name,
     created: new Date().toISOString(),
     updated: new Date().toISOString(),
-    columns: [],
-    rows: [],
+    columns: [
+      {
+        id: crypto.randomUUID(),
+        title: "Name",
+        type: "text",
+      },
+    ],
+    rows: [
+      {
+        id: crypto.randomUUID(),
+        values: {},
+      },
+    ],
     tagCache: {},
   };
 }
 
-// Sheet
+// Migration
 function updateTagCache(sheetData: SheetData): SheetData["tagCache"] {
   const tagCache: SheetData["tagCache"] = {};
 
@@ -115,7 +126,6 @@ function updateTagCache(sheetData: SheetData): SheetData["tagCache"] {
   return tagCache;
 }
 
-// Column
 function updateColumn(
   sheetData: SheetData,
   columnId: string,
