@@ -203,14 +203,21 @@ const NameCell = styled.div`
 export const MySheetsPage = () => {
   const remoteBackends = useRemoteBackends();
   const { search } = useLocation();
-  const [sheets, setSheets] = useState<Sheet[]>([]);
-  const [selectedSheet, setSelectedSheet] = useState<string>("");
-  const [creatingSheet, setCreatingSheet] = useState<string>("");
 
   const [selectedStorage, setSelectedStorage] = useState<string>(""); // "" = localStorage
   const [addingStorage, setAddingStorage] = useState<boolean>(false);
   const [loadingStorages, setLoadingStorages] = useState<string[]>([]);
   const [brokenStorages, setBrokenStorages] = useState<string[]>([]);
+
+  const [sheetsMap, setSheetsMap] = useState<
+    Record<string, Sheet[] | undefined>
+  >({});
+  const sheets = useMemo(
+    () => sheetsMap[selectedStorage],
+    [sheetsMap, selectedStorage],
+  );
+  const [selectedSheet, setSelectedSheet] = useState<string>("");
+  const [creatingSheet, setCreatingSheet] = useState<string>("");
 
   useEffect(() => {
     setSelectedStorage(getCurrentRemoteUrl(search));
@@ -229,13 +236,12 @@ export const MySheetsPage = () => {
   }, [selectedStorage]);
 
   const fetchSheets = useCallback(async () => {
-    setSheets([]);
     setLoadingStorages((s) => [...s, selectedStorage]);
     setBrokenStorages((s) => s.filter((s) => s !== selectedStorage));
     const res = await storageBackend.getSheets();
     setLoadingStorages((s) => s.filter((s) => s !== selectedStorage));
     if (res.ok) {
-      setSheets(res.value);
+      setSheetsMap((m) => ({ ...m, [selectedStorage]: res.value }));
       setSelectedSheet("");
     } else if (remoteBackends.backends.find((b) => b.url === selectedStorage)) {
       setBrokenStorages((s) => [...s, selectedStorage]);
@@ -254,7 +260,7 @@ export const MySheetsPage = () => {
     const title = prompt("Enter sheet title:");
     if (!title) return;
 
-    if (sheets.find((sheet) => sheet.name === title)) {
+    if (sheets?.find((sheet) => sheet.name === title)) {
       alert(`Error: Sheet "${title}" already exists!`);
       return;
     }
@@ -263,20 +269,26 @@ export const MySheetsPage = () => {
     storageBackend.createSheet(title).then((res) => {
       setCreatingSheet("");
       if (res.ok) {
-        setSheets([...sheets, res.value]);
+        setSheetsMap((m) => {
+          const storageSheets = m[selectedStorage] || [];
+          return {
+            ...m,
+            [selectedStorage]: [...storageSheets, res.value],
+          };
+        });
       } else {
         alert(res.error);
         fetchSheets();
       }
     });
-  }, [fetchSheets, sheets, storageBackend]);
+  }, [fetchSheets, selectedStorage, sheets, storageBackend]);
 
   const onRenameSheet = useCallback(() => {
     if (!selectedSheet) {
       return;
     }
 
-    const sheet = sheets.find((sheet) => sheet.id === selectedSheet);
+    const sheet = sheets?.find((sheet) => sheet.id === selectedSheet);
     if (!sheet) {
       alert("Sheet not found");
       return;
@@ -286,7 +298,7 @@ export const MySheetsPage = () => {
       return;
     }
     sheet.name = title;
-    setSheets([...sheets]);
+    setSheetsMap((s) => ({ ...s }));
 
     storageBackend.renameSheet(selectedSheet, title).then((res) => {
       if (!res.ok) {
@@ -301,23 +313,31 @@ export const MySheetsPage = () => {
       return;
     }
 
-    const sheet = sheets.find((sheet) => sheet.id === selectedSheet);
+    const sheet = sheets?.find((sheet) => sheet.id === selectedSheet);
     if (!sheet) {
       alert("Sheet not found");
       return;
     }
 
     if (confirm(`Are you sure you want to delete "${sheet.name}"?`)) {
+      setSheetsMap((s) => {
+        const storageSheets = s[selectedStorage] || [];
+        return {
+          ...s,
+          [selectedStorage]: storageSheets.filter(
+            (s) => s.id !== selectedSheet,
+          ),
+        };
+      });
+
       storageBackend.deleteSheet(selectedSheet).then((res) => {
-        if (res.ok) {
-          setSheets(sheets.filter((sheet) => sheet.id !== selectedSheet));
-        } else {
+        if (!res.ok) {
           alert(res.error);
           fetchSheets();
         }
       });
     }
-  }, [selectedSheet, sheets, storageBackend, fetchSheets]);
+  }, [selectedSheet, sheets, storageBackend, selectedStorage, fetchSheets]);
 
   const getUrl = useCallback(() => {
     let url = `/sheet/${selectedSheet}`;
@@ -379,6 +399,7 @@ export const MySheetsPage = () => {
 
         <TabsContainer>
           <TabButton
+            tabIndex={0}
             key="localStorage"
             $selected={!selectedStorage && !addingStorage}
             onClick={() => setSelectedStorage("")}
@@ -387,6 +408,7 @@ export const MySheetsPage = () => {
           </TabButton>
           {remoteBackends.backends.map((backend) => (
             <TabButton
+              tabIndex={0}
               key={backend.url}
               $selected={selectedStorage === backend.url && !addingStorage}
               $loading={loadingStorages.includes(backend.url)}
@@ -404,14 +426,9 @@ export const MySheetsPage = () => {
               <BasicButton
                 style={{ display: "flex", alignItems: "center" }}
                 onClick={(e) => {
-                  if (
-                    !confirm(
-                      `Are you sure you want to remove backend: ${backend.url}?`,
-                    )
-                  ) {
+                  if (!confirm(`Close backend: ${backend.url}?`)) {
                     return;
                   }
-
                   e.stopPropagation();
                   remoteBackends.remove(backend);
                   setBrokenStorages((s) => s.filter((s) => s !== backend.url));
@@ -422,6 +439,7 @@ export const MySheetsPage = () => {
             </TabButton>
           ))}
           <TabButton
+            tabIndex={0}
             key="add"
             $selected={addingStorage}
             title="Add remote backend"
@@ -460,11 +478,7 @@ export const MySheetsPage = () => {
               <div>Created</div>
             </Columns>
 
-            {loadingStorages.includes(selectedStorage) && (
-              <FileCreating key="_">Loading remote...</FileCreating>
-            )}
-
-            {sheets.map((sheet, ind) => (
+            {sheets?.map((sheet, ind) => (
               <File
                 tabIndex={ind}
                 key={sheet.id}
@@ -492,6 +506,13 @@ export const MySheetsPage = () => {
                 <Time dateTime={sheet.created} />
               </File>
             ))}
+            {loadingStorages.includes(selectedStorage) && (
+              <FileCreating key="_">
+                {(sheetsMap[selectedStorage] ?? []).length === 0
+                  ? "Connecting to remote..."
+                  : "Updating remote..."}
+              </FileCreating>
+            )}
             {creatingSheet && (
               <FileCreating key="_">Creating "{creatingSheet}"...</FileCreating>
             )}
