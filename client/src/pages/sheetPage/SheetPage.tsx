@@ -25,10 +25,10 @@ const VContainer = styled.div`
 `;
 
 // - Right column container
-const AddColumn = styled.td`
+const AddColumn = styled.th`
   background-color: white;
   width: ${HEADER_HEIGHT}px;
-  border: 1px dotted #0000006f;
+  border: 2px dotted #0000006f;
 `;
 
 const DelRowContainer = styled.div`
@@ -42,12 +42,11 @@ const AddContainer = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  border: 1px dotted #0000006f;
+  border: 2px dotted #0000006f;
 `;
 
 const AddRowContainer = styled(AddContainer)`
   height: ${HEADER_HEIGHT}px;
-  width: 100%;
 `;
 
 const AddColumnButton = styled(BasicButton)`
