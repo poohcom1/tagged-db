@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@app/shared": "*",
+    "@fastify/basic-auth": "^6.2.0",
     "@fastify/cors": "^11.2.0",
     "fastify": "^5.7.4",
     "pino-pretty": "^13.1.3"

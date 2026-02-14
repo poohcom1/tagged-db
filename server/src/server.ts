@@ -11,7 +11,6 @@ import {
   UPDATE_SHEET,
   type EndpointOf,
 } from "@app/shared/endpoints";
-import { errorToString } from "@app/shared/util";
 import { jsonFsDb } from "./db/jsonFsDb.js";
 import { SheetError } from "./lib/errors.js";
 
@@ -30,18 +29,19 @@ if (
 
 (async () => {
   const server = Fastify({
-    logger: process.env.LOG_JSON
-      ? true
-      : {
-          transport: {
-            target: "pino-pretty",
-            options: {
-              translateTime: "HH:MM:ss",
-              ignore: "pid,hostname",
-              colorize: true,
+    logger:
+      process.env.LOG_JSON === "true"
+        ? true
+        : {
+            transport: {
+              target: "pino-pretty",
+              options: {
+                translateTime: "HH:MM:ss",
+                ignore: "pid,hostname",
+                colorize: true,
+              },
             },
           },
-        },
     https,
   });
 
@@ -50,14 +50,14 @@ if (
   }
 
   // Static
+  const ENABLE_ADMIN_AUTH = process.env.ADMIN_AUTH === "true";
+
   await server.register(cors, {
-    origin: "*",
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type"],
+    origin: true,
+    credentials: ENABLE_ADMIN_AUTH,
   });
 
   // HTTP
-  const ENABLE_ADMIN_AUTH = process.env.ADMIN_AUTH === "true";
 
   if (ENABLE_ADMIN_AUTH) {
     server.log.info("Admin auth enabled");
