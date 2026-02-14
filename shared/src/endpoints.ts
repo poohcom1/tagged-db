@@ -3,12 +3,12 @@ import { SheetData, SheetMeta } from "./types/sheet";
 
 export const GET_SHEETS: Endpoint<undefined, undefined, SheetMeta[]> = {
   url: "/api/sheets",
-  method: "GET",
+  method: "get",
 };
 
 export const CREATE_SHEET: Endpoint<undefined, { title: string }, SheetMeta> = {
   url: "/api/sheets",
-  method: "POST",
+  method: "post",
 };
 
 export const RENAME_SHEET: Endpoint<
@@ -17,13 +17,13 @@ export const RENAME_SHEET: Endpoint<
   undefined
 > = {
   url: "/api/sheets/:sheetId",
-  method: "PATCH",
+  method: "patch",
 };
 
 export const DELETE_SHEET: Endpoint<{ sheetId: string }, undefined, undefined> =
   {
     url: "/api/sheets/:sheetId",
-    method: "DELETE",
+    method: "delete",
   };
 
 export const GET_SHEET_DATA: Endpoint<
@@ -32,7 +32,7 @@ export const GET_SHEET_DATA: Endpoint<
   SheetData
 > = {
   url: "/api/sheets/:sheetId/data",
-  method: "GET",
+  method: "get",
 };
 
 export const UPDATE_SHEET: Endpoint<
@@ -41,7 +41,7 @@ export const UPDATE_SHEET: Endpoint<
   undefined
 > = {
   url: "/api/sheets/:sheetId/data",
-  method: "PATCH",
+  method: "patch",
 };
 
 // URL Builder
@@ -61,7 +61,7 @@ export function buildUrl<E extends Endpoint<any, any, any>>(
 }
 
 // Type helpers
-type HttpMethod = "GET" | "POST" | "PATCH" | "DELETE";
+type HttpMethod = "get" | "post" | "patch" | "delete";
 
 export type Endpoint<
   TParams = undefined,

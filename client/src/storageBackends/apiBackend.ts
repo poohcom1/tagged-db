@@ -151,7 +151,7 @@ async function fetchEndpoint<E extends Endpoint<unknown, unknown, unknown>>(
   startRequest();
   try {
     const res = await fetch(baseUrl + buildUrl(endpoint, params), {
-      method: endpoint.method,
+      method: endpoint.method.toUpperCase(),
       headers: body
         ? {
             "Content-Type": "application/json",

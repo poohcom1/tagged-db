@@ -21,7 +21,7 @@ const server = Fastify({
 // Static
 await server.register(cors, {
   origin: "*",
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type"],
 });
 
@@ -33,28 +33,28 @@ server.get("/api/ping", async function handler(request, reply) {
 // My Sheets
 const db = jsonFsDb;
 
-server.get<EndpointOf<typeof GET_SHEETS>>(
+server[GET_SHEETS.method]<EndpointOf<typeof GET_SHEETS>>(
   GET_SHEETS.url,
   async function handler(request, reply) {
     return await db.getSheets();
   },
 );
 
-server.post<EndpointOf<typeof CREATE_SHEET>>(
+server[CREATE_SHEET.method]<EndpointOf<typeof CREATE_SHEET>>(
   CREATE_SHEET.url,
   async function handler(request, reply) {
     return await db.createSheet(request.body.title);
   },
 );
 
-server.patch<EndpointOf<typeof RENAME_SHEET>>(
+server[RENAME_SHEET.method]<EndpointOf<typeof RENAME_SHEET>>(
   RENAME_SHEET.url,
   async function handler(request, reply) {
     await db.renameSheet(request.params.sheetId, request.body.title);
   },
 );
 
-server.delete<EndpointOf<typeof DELETE_SHEET>>(
+server[DELETE_SHEET.method]<EndpointOf<typeof DELETE_SHEET>>(
   DELETE_SHEET.url,
   async function handler(request, reply) {
     await db.deleteSheet(request.params.sheetId);
@@ -62,14 +62,14 @@ server.delete<EndpointOf<typeof DELETE_SHEET>>(
 );
 
 // Sheet
-server.get<EndpointOf<typeof GET_SHEET_DATA>>(
+server[GET_SHEET_DATA.method]<EndpointOf<typeof GET_SHEET_DATA>>(
   GET_SHEET_DATA.url,
   async function handler(request, reply) {
     return await db.getSheetData(request.params.sheetId);
   },
 );
 
-server.patch<EndpointOf<typeof UPDATE_SHEET>>(
+server[UPDATE_SHEET.method]<EndpointOf<typeof UPDATE_SHEET>>(
   UPDATE_SHEET.url,
   async function handler(request, reply) {
     await db.updateSheet(request.params.sheetId, request.body.action);
