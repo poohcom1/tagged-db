@@ -11,12 +11,20 @@ interface Prop {
   columnInfo: Column;
   value?: ColumnValue;
   tagSuggestions?: string[];
+  onTagClicked: (tag: string, e: React.MouseEvent) => void;
 
   onCellUpdate?: (rowId: string, column: Column, value: ColumnValue) => void;
 }
 
 export const Cell = React.memo(
-  ({ rowId, columnInfo, value, onCellUpdate, tagSuggestions }: Prop) => {
+  ({
+    rowId,
+    columnInfo,
+    value,
+    onCellUpdate,
+    tagSuggestions,
+    onTagClicked,
+  }: Prop) => {
     const onChanged = useCallback(
       (updatedValue: ColumnValue) => {
         onCellUpdate?.(rowId, columnInfo, updatedValue);
@@ -46,6 +54,7 @@ export const Cell = React.memo(
               value={value}
               onChange={onChanged}
               tags={tagSuggestions ?? []}
+              onTagClicked={onTagClicked}
             />
           );
       }

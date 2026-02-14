@@ -18,6 +18,7 @@ import { IoMdClose } from "react-icons/io";
 import { border } from "../../styles/mixins";
 import { DesktopHeader } from "../../components/desktop/DesktopHeader";
 import { BaseButton } from "../../components/BaseButton";
+import { parseTags } from "@app/shared/sheetValidation";
 
 // Styles
 const Background = styled.div`
@@ -125,6 +126,7 @@ export const SheetPage = () => {
   );
 
   const [sortby, setSortby] = useState<SortKey | null>(null);
+  const [filterKeys, setFilterKeys] = useState<Record<string, string[]>>({}); // colid ->tags
 
   useEffect(() => {
     if (sheetData) {
@@ -197,8 +199,19 @@ export const SheetPage = () => {
       }
     });
 
-    return sheet;
-  }, [sheetData, sortby]);
+    return sheet.filter((row) => {
+      for (const [colId, tags] of Object.entries(filterKeys)) {
+        const rowTagsString = row.values[colId] || "";
+        const rowTags = parseTags(rowTagsString);
+        for (const tag of tags) {
+          if (!rowTags.includes(tag)) {
+            return false;
+          }
+        }
+      }
+      return true;
+    });
+  }, [filterKeys, sheetData, sortby]);
 
   if (!sheetData) return null;
 
@@ -346,23 +359,42 @@ export const SheetPage = () => {
             height: "24px",
           }}
         >
-          <BaseButton
-            style={{ marginLeft: "auto" }}
-            onClick={() => setSortby(null)}
-            title="Clear sort"
-          >
-            {sortby ? (
+          <div style={{ marginLeft: "auto" }}>
+            <BaseButton onClick={() => setFilterKeys({})}>
               <>
-                <span style={{ opacity: 0.7 }}>Sort | </span>
-                <span>
-                  {sheetData.columns.find((c) => c.id === sortby.columnId)
-                    ?.title +
-                    " " +
-                    (sortby.ascOrder ? "↑" : "↓")}
-                </span>
+                {Object.keys(filterKeys).length > 0 && (
+                  <>
+                    <span style={{ opacity: 0.7 }}>Filter | </span>
+                    <span>
+                      {Object.entries(filterKeys).map(([key, value]) => {
+                        const column = sheetData.columns.find(
+                          (c) => c.id === key,
+                        );
+                        return (
+                          <span key={key}>
+                            {column?.title}: {value.join(",")}
+                          </span>
+                        );
+                      })}
+                    </span>
+                  </>
+                )}
               </>
-            ) : null}
-          </BaseButton>
+            </BaseButton>
+            <BaseButton onClick={() => setSortby(null)} title="Clear sort">
+              {sortby ? (
+                <>
+                  <span style={{ opacity: 0.7 }}>Sort | </span>
+                  <span>
+                    {sheetData.columns.find((c) => c.id === sortby.columnId)
+                      ?.title +
+                      " " +
+                      (sortby.ascOrder ? "↑" : "↓")}
+                  </span>
+                </>
+              ) : null}
+            </BaseButton>
+          </div>
         </div>
 
         <VContainer>
@@ -436,6 +468,20 @@ export const SheetPage = () => {
                       columnInfo={column}
                       onCellUpdate={onUpdateCell}
                       tagSuggestions={sheetData.tagCache[column.id]}
+                      onTagClicked={(tag, e) => {
+                        if (e.shiftKey) {
+                          if (filterKeys[column.id]?.includes(tag)) {
+                            return;
+                          }
+
+                          setFilterKeys((e) => ({
+                            ...e,
+                            [column.id]: [...(e[column.id] || []), tag],
+                          }));
+                        } else {
+                          setFilterKeys({ [column.id]: [tag] });
+                        }
+                      }}
                     />
                   ))}
 

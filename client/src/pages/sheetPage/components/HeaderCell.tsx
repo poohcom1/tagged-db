@@ -33,6 +33,7 @@ const ArrowButton = styled(BaseButton)`
 export const HeaderButton = styled(EditButton)<{ $underline?: boolean }>`
   text-decoration: ${({ $underline }) =>
     $underline ? "underline" : "inherit"};
+  color: #2e5ca1;
 
   &:hover {
     text-decoration: underline;

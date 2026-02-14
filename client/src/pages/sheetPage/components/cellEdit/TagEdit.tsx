@@ -42,7 +42,7 @@ interface Props {
   columnId: string;
   tags: string[];
 
-  onTagClicked?: (tag: string) => void;
+  onTagClicked?: (tag: string, e: React.MouseEvent) => void;
 }
 
 export const TagEdit = ({
@@ -103,8 +103,8 @@ export const TagEdit = ({
           {tags.map((tag, ind) => (
             <EditButton
               key={tag}
-              onClick={() => {
-                onTagClicked?.(tag);
+              onClick={(e) => {
+                onTagClicked?.(tag, e);
               }}
               style={{ marginRight: "4px", fontSize: "small" }}
             >
