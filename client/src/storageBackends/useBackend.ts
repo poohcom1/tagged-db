@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { apiBackend } from "./apiBackend";
 import { localStorageBackend } from "./localStorageBackend";
@@ -6,7 +6,7 @@ import { StorageBackend } from "./storageBackend";
 
 export const REMOTE_URL_PARAM = "remote";
 
-const getCurrentBackendKey = (searchParamString: string): StorageBackend => {
+const getCurrentBackend = (searchParamString: string): StorageBackend => {
   const searchParam = new URLSearchParams(searchParamString);
   const url = searchParam.get(REMOTE_URL_PARAM);
   if (url) {
@@ -18,47 +18,41 @@ const getCurrentBackendKey = (searchParamString: string): StorageBackend => {
 export const useStorageBackend = () => {
   const { search } = useLocation();
 
-  const [selectedStorage, setSelectedStorage] = useState<StorageBackend>(
-    getCurrentBackendKey(search),
+  const [currentStorage, setCurrentStorage] = useState<StorageBackend>(
+    getCurrentBackend(search),
   );
 
   // Set storage key based on URL
+  const currentBackendId = useRef(currentStorage.id);
   useEffect(() => {
-    const backend = getCurrentBackendKey(search);
-    if (backend.id !== selectedStorage.id) {
-      setSelectedStorage(getCurrentBackendKey(search));
+    const backend = getCurrentBackend(search);
+    if (backend.id !== currentBackendId.current) {
+      setCurrentStorage(getCurrentBackend(search));
+      currentBackendId.current = backend.id;
     }
-  }, [search, selectedStorage.id]);
-
-  // Set backend based on storage key
-  const storageBackend = useMemo(() => {
-    if (selectedStorage.backendType === "local") {
-      return localStorageBackend;
-    }
-    return apiBackend(selectedStorage.url);
-  }, [selectedStorage]);
+  }, [search]);
 
   // Update URL base on storage key
   useEffect(() => {
     window.history.pushState(
       null,
       "",
-      `${window.location.pathname}${storageBackend.queryParam ? `?${storageBackend.queryParam}` : ""}`,
+      `${window.location.pathname}${currentStorage.queryParam ? `?${currentStorage.queryParam}` : ""}`,
     );
-  }, [storageBackend.queryParam]);
+  }, [currentStorage.queryParam]);
 
   const setUseLocalStorage = useCallback(
-    () => setSelectedStorage(localStorageBackend),
+    () => setCurrentStorage(localStorageBackend),
     [],
   );
 
   const setUseRemoteBackend = useCallback(
-    (url: string) => setSelectedStorage(apiBackend(url)),
+    (url: string) => setCurrentStorage(apiBackend(url)),
     [],
   );
 
   return {
-    storageBackend,
+    storageBackend: currentStorage,
     setUseLocalStorage,
     setUseRemoteBackend,
   };

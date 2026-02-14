@@ -201,8 +201,11 @@ const NameCell = styled.div`
 export const MySheetsPage = () => {
   const userRemotes = useUserRemotes();
 
-  const { storageBackend, setUseLocalStorage, setUseRemoteBackend } =
-    useStorageBackend();
+  const {
+    storageBackend: storageBackend,
+    setUseLocalStorage,
+    setUseRemoteBackend,
+  } = useStorageBackend();
   const [addingStorage, setAddingStorage] = useState<boolean>(false);
   const [loadingStorages, setLoadingStorages] = useState<string[]>([]);
   const [brokenStorages, setBrokenStorages] = useState<string[]>([]);

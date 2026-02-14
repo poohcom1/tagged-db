@@ -118,7 +118,7 @@ interface SortKey {
 }
 
 export const SheetPage = () => {
-  const { storageBackend } = useStorageBackend();
+  const { storageBackend: storageBackend } = useStorageBackend();
   const sheetId = useParams<{ id: string }>().id ?? "";
   const [sheetData, setSheetData] = useState<SheetData | null>(null);
   const [currentEditColumnId, setCurrentEditColumnId] = useState<string | null>(
