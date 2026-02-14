@@ -11,6 +11,9 @@ services:
     environment:
       DATA_DIR: /data
       PORT: ${PORT:-3000}
+      HTTPS_ENABLED: false
+      HTTPS_KEY_PATH:
+      HTTPS_CERT_PATH:
 
     ports:
       - "${PORT:-3000}:${PORT:-3000}"

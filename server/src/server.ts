@@ -12,12 +12,15 @@ import {
 } from "@app/shared/endpoints";
 import { errorToString } from "@app/shared/util";
 import { jsonFsDb } from "./db/jsonFsDb.js";
-import dotenv from "dotenv";
-dotenv.config();
 
 let https: { key?: string; cert?: string } | null = null;
 
-if (process.env.HTTPS_KEY_PATH && process.env.HTTPS_CERT_PATH) {
+console.log(process.env);
+if (
+  process.env.HTTPS_ENABLED === "true" &&
+  process.env.HTTPS_KEY_PATH &&
+  process.env.HTTPS_CERT_PATH
+) {
   https = {
     key: fs.readFileSync(process.env.HTTPS_KEY_PATH).toString(),
     cert: fs.readFileSync(process.env.HTTPS_CERT_PATH).toString(),
