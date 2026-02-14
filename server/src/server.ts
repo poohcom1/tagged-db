@@ -1,6 +1,6 @@
 import Fastify from "fastify";
+import fs from "fs";
 import cors from "@fastify/cors";
-import { memoryDb } from "./db/memoryDb.js";
 import {
   CREATE_SHEET,
   DELETE_SHEET,
@@ -10,14 +10,38 @@ import {
   UPDATE_SHEET,
   type EndpointOf,
 } from "@app/shared/endpoints";
-import { unwrapOrThrow } from "@app/shared/types/result";
 import { errorToString } from "@app/shared/util";
 import { jsonFsDb } from "./db/jsonFsDb.js";
 
+const https: { key?: string; cert?: string } = {};
+
+if (process.env.HTTPS_KEY_PATH && process.env.HTTPS_CERT_PATH) {
+  https.key = fs.readFileSync(process.env.HTTPS_KEY_PATH).toString();
+  https.cert = fs.readFileSync(process.env.HTTPS_CERT_PATH).toString();
+} else if (process.env.HTTPS_KEY_PATH || process.env.HTTPS_CERT_PATH) {
+  throw new Error("HTTPS enabled but both key/cert paths not provided");
+}
+
 (async () => {
   const server = Fastify({
-    logger: true,
+    logger: process.env.LOG_PRETTY
+      ? {
+          transport: {
+            target: "pino-pretty",
+            options: {
+              translateTime: "HH:MM:ss",
+              ignore: "pid,hostname",
+              colorize: true,
+            },
+          },
+        }
+      : true,
+    https,
   });
+
+  if (https.key && https.cert) {
+    server.log.info("HTTPS enabled");
+  }
 
   // Static
   await server.register(cors, {
@@ -80,16 +104,14 @@ import { jsonFsDb } from "./db/jsonFsDb.js";
   // Error
   server.setErrorHandler((error, request, reply) => {
     const message = errorToString(error);
-    console.error("[server error]", message);
+    server.log.error("[caught error] " + message);
     reply.code(500).type("text/plain").send(message);
   });
 
   // Run the server!
   const port = Number(process.env.PORT) || 3000;
   try {
-    server.listen({ port, host: "0.0.0.0" }, (err, address) =>
-      console.log(`Server listening at ${address}`),
-    );
+    server.listen({ port, host: "0.0.0.0" });
   } catch (err) {
     server.log.error(err);
     process.exit(1);
