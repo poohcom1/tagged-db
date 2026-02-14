@@ -24,8 +24,11 @@ export const useStorageBackend = () => {
 
   // Set storage key based on URL
   useEffect(() => {
-    setSelectedStorage(getCurrentBackendKey(search));
-  }, [search]);
+    const backend = getCurrentBackendKey(search);
+    if (backend.id !== selectedStorage.id) {
+      setSelectedStorage(getCurrentBackendKey(search));
+    }
+  }, [search, selectedStorage.id]);
 
   // Set backend based on storage key
   const storageBackend = useMemo(() => {
