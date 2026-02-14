@@ -4,7 +4,7 @@ import type { SheetAction } from "@app/shared/types/action";
 
 /**
  * Interface for databases.
- * All method may throw.
+ * All method may throw a SheetError.
  */
 export interface DBInterface {
   // Files

@@ -139,6 +139,14 @@ if (typeof window !== "undefined") {
   });
 }
 
+const getAuthHeader = (baseUrl: string) => {
+  return sessionStorage.getItem("tagged_db.auth." + baseUrl) || "";
+};
+
+const setAuthHeader = (baseUrl: string, authHeader: string) => {
+  sessionStorage.setItem("tagged_db.auth." + baseUrl, authHeader);
+};
+
 /**
  * @param baseUrl Base url without trailing slash
  */
@@ -150,15 +158,36 @@ async function fetchEndpoint<E extends Endpoint<unknown, unknown, unknown>>(
 ): Promise<Response> {
   startRequest();
   try {
-    const res = await fetch(baseUrl + buildUrl(endpoint, params), {
-      method: endpoint.method.toUpperCase(),
-      headers: body
-        ? {
-            "Content-Type": "application/json",
-          }
-        : undefined,
-      body: JSON.stringify(body),
+    const fetchFunc = (extraHeaders: Record<string, string>) =>
+      fetch(baseUrl + buildUrl(endpoint, params), {
+        method: endpoint.method.toUpperCase(),
+        headers: {
+          ContentType: body ? "application/json" : "",
+          ...extraHeaders,
+        },
+        body: JSON.stringify(body),
+      });
+
+    let res = await fetchFunc({
+      Authorization: getAuthHeader(baseUrl),
     });
+
+    if (res.status === 401) {
+      const user = prompt("Username:") || "";
+      const pass = prompt("Password:") || "";
+
+      const authHeader = "Basic " + btoa(`${user}:${pass}`);
+      res = await fetchFunc({
+        Authorization: authHeader,
+      });
+
+      if (res.status !== 401) {
+        setAuthHeader(baseUrl, authHeader);
+      } else {
+        alert("Invalid credentials!");
+      }
+    }
+
     await handleHttpError(res);
     return res;
   } catch (e) {

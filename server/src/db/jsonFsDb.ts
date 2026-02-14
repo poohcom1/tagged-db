@@ -5,6 +5,7 @@ import { Err, Ok, type Result } from "@app/shared/types/result";
 import type { SheetAction } from "@app/shared/types/action";
 import type { SheetMeta, SheetData } from "@app/shared/types/sheet";
 import type { DBInterface } from "../types/db";
+import { SheetError } from "../lib/errors";
 
 const DATA_DIR = process.env.DATA_DIR || path.resolve("./data");
 
@@ -54,7 +55,7 @@ export const jsonFsDb: DBInterface = {
     const sheet = await getSheetFile(`${id}.json`);
     const res = migrator.reduce(sheet, SheetAction);
     if (!res.ok) {
-      throw new Error(res.error);
+      throw new SheetError(res.error);
     }
     await saveSheetFile(`${id}.json`, res.value);
   },

@@ -4,11 +4,12 @@ import { Err, Ok, Result } from "@app/shared/types/result";
 import { type SheetMeta, type SheetData } from "@app/shared/types/sheet";
 import { resolve } from "path";
 import { writeFile } from "fs/promises";
+import { SheetError } from "../lib/errors.js";
 
 export const memoryDb: DBInterface = {
   async createSheet(title: string) {
     if (Object.values(db.sheetData).find((s) => s.name === title)) {
-      throw new Error("Sheet already exists");
+      throw new SheetError("Sheet already exists");
     }
 
     const uuid = crypto.randomUUID();
@@ -19,7 +20,7 @@ export const memoryDb: DBInterface = {
   async renameSheet(sheetId: string, title: string) {
     const sheet = db.sheetData[sheetId];
     if (!sheet) {
-      throw new Error("Sheet not found");
+      throw new SheetError("Sheet not found");
     }
     sheet.name = title;
     db.sheetData[sheetId] = sheet;
@@ -32,18 +33,18 @@ export const memoryDb: DBInterface = {
   },
   async getSheetData(sheetId: string) {
     if (!db.sheetData[sheetId]) {
-      throw new Error("Sheet not found: " + sheetId);
+      throw new SheetError("Sheet not found: " + sheetId);
     }
     return db.sheetData[sheetId];
   },
   async updateSheet(id, SheetAction) {
     const sheet = db.sheetData[id];
     if (!sheet) {
-      throw new Error("Sheet not found");
+      throw new SheetError("Sheet not found");
     }
     const res = migration.reduce(sheet, SheetAction);
     if (!res.ok) {
-      throw new Error(res.error);
+      throw new SheetError(res.error);
     }
     db.sheetData[id] = res.value;
   },
