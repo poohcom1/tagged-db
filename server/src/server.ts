@@ -15,7 +15,6 @@ import { jsonFsDb } from "./db/jsonFsDb.js";
 
 let https: { key?: string; cert?: string } | null = null;
 
-console.log(process.env);
 if (
   process.env.HTTPS_ENABLED === "true" &&
   process.env.HTTPS_KEY_PATH &&
@@ -29,8 +28,9 @@ if (
 
 (async () => {
   const server = Fastify({
-    logger: process.env.LOG_PRETTY
-      ? {
+    logger: process.env.LOG_JSON
+      ? true
+      : {
           transport: {
             target: "pino-pretty",
             options: {
@@ -39,8 +39,7 @@ if (
               colorize: true,
             },
           },
-        }
-      : true,
+        },
     https,
   });
 
