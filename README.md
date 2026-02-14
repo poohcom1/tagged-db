@@ -48,3 +48,11 @@ npm run dev
 ```
 
 3. Go to http://localhost:5173
+
+### Docker
+
+Server:
+
+```sh
+docker compose -f server/docker-compose.yml up -d --force-recreate --build
+```

@@ -17,4 +17,4 @@ RUN npm run build:server
 
 CMD ["npm", "run", "start:server"]
 
-EXPOSE 3000
+EXPOSE ${PORT}

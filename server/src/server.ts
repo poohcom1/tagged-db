@@ -87,7 +87,7 @@ import { jsonFsDb } from "./db/jsonFsDb.js";
   // Run the server!
   const port = Number(process.env.PORT) || 3000;
   try {
-    server.listen({ port }, (err, address) =>
+    server.listen({ port, host: "0.0.0.0" }, (err, address) =>
       console.log(`Server listening at ${address}`),
     );
   } catch (err) {

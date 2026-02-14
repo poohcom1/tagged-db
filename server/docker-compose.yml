@@ -1,7 +1,11 @@
+name: tagged-db
+
 services:
   server:
+    env_file:
+      - .env
     build:
-      context: .
+      context: ..
       dockerfile: server/Dockerfile
 
     environment:
