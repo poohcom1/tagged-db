@@ -17,7 +17,7 @@ export const RENAME_SHEET: Endpoint<
   undefined
 > = {
   url: "/api/sheets/:sheetId",
-  method: "patch",
+  method: "post",
 };
 
 export const DELETE_SHEET: Endpoint<{ sheetId: string }, undefined, undefined> =
@@ -40,8 +40,8 @@ export const UPDATE_SHEET: Endpoint<
   { action: SheetAction },
   undefined
 > = {
-  url: "/api/sheets/:sheetId/data",
-  method: "patch",
+  url: "/api/sheets/:sheetId/update",
+  method: "post",
 };
 
 // URL Builder
@@ -61,7 +61,7 @@ export function buildUrl<E extends Endpoint<any, any, any>>(
 }
 
 // Type helpers
-type HttpMethod = "get" | "post" | "patch" | "delete";
+type HttpMethod = "get" | "post" | "delete";
 
 export type Endpoint<
   TParams = undefined,
