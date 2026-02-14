@@ -4,3 +4,5 @@ debug_db.json
 
 data/*
 !data/.gitkeep
+
+/dist

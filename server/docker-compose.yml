@@ -1,0 +1,18 @@
+services:
+  server:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+
+    environment:
+      DATA_DIR: /data
+      PORT: ${PORT:-3000}
+
+    ports:
+      - "${PORT:-3000}:${PORT:-3000}"
+
+    volumes:
+      - server-data:/data
+
+volumes:
+  server-data:

@@ -1,0 +1,8 @@
+node_modules
+dist
+tsconfig.tsbuildinfo
+.gitignore
+data
+nodemon.json
+debug_db.json
+.env.example
