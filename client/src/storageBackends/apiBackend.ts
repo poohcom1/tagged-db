@@ -168,9 +168,14 @@ async function fetchEndpoint<E extends Endpoint<unknown, unknown, unknown>>(
         body: JSON.stringify(body),
       });
 
-    let res = await fetchFunc({
-      Authorization: getAuthHeader(baseUrl),
-    });
+    const authHeader = getAuthHeader(baseUrl);
+    let res = await fetchFunc(
+      authHeader
+        ? {
+            Authorization: getAuthHeader(baseUrl),
+          }
+        : {},
+    );
 
     if (res.status === 401) {
       const user = prompt("Username:") || "";
