@@ -1,4 +1,4 @@
-import { ColumnType } from "./sheet";
+import { ColumnType } from "./sheet.js";
 
 export type SheetActionType =
   | "update_cell"

@@ -1,5 +1,5 @@
-import { SheetAction } from "./types/action";
-import { SheetData, SheetMeta } from "./types/sheet";
+import { SheetAction } from "./types/action.js";
+import { SheetData, SheetMeta } from "./types/sheet.js";
 
 export const GET_SHEETS: Endpoint<undefined, undefined, SheetMeta[]> = {
   url: "/api/sheets",

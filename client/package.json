@@ -2,9 +2,8 @@
   "name": "tagged-db-client",
   "version": "0.1.0",
   "private": true,
-  "type": "module",
   "dependencies": {
-    "@app/shared": "file:../shared",
+    "@app/shared": "*",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",

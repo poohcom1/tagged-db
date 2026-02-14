@@ -1,7 +1,12 @@
-import { Err, Ok, Result } from "./types/result";
-import type { Column, ColumnType, ColumnValue, SheetData } from "./types/sheet";
-import { parseTags, validateType } from "./sheetValidation";
-import { ColumnEditAction, SheetAction, SheetActionType } from "./types/action";
+import { Err, Ok, Result } from "./types/result.js";
+import type {
+  Column,
+  ColumnType,
+  ColumnValue,
+  SheetData,
+} from "./types/sheet.js";
+import { parseTags, validateType } from "./sheetValidation.js";
+import { ColumnEditAction, SheetAction } from "./types/action.js";
 
 export function reduce(
   sheetData: SheetData,

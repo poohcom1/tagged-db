@@ -12,14 +12,16 @@ import {
 } from "@app/shared/endpoints";
 import { errorToString } from "@app/shared/util";
 import { jsonFsDb } from "./db/jsonFsDb.js";
+import dotenv from "dotenv";
+dotenv.config();
 
-const https: { key?: string; cert?: string } = {};
+let https: { key?: string; cert?: string } | null = null;
 
 if (process.env.HTTPS_KEY_PATH && process.env.HTTPS_CERT_PATH) {
-  https.key = fs.readFileSync(process.env.HTTPS_KEY_PATH).toString();
-  https.cert = fs.readFileSync(process.env.HTTPS_CERT_PATH).toString();
-} else if (process.env.HTTPS_KEY_PATH || process.env.HTTPS_CERT_PATH) {
-  throw new Error("HTTPS enabled but both key/cert paths not provided");
+  https = {
+    key: fs.readFileSync(process.env.HTTPS_KEY_PATH).toString(),
+    cert: fs.readFileSync(process.env.HTTPS_CERT_PATH).toString(),
+  };
 }
 
 (async () => {
@@ -39,7 +41,7 @@ if (process.env.HTTPS_KEY_PATH && process.env.HTTPS_CERT_PATH) {
     https,
   });
 
-  if (https.key && https.cert) {
+  if (https?.key && https?.cert) {
     server.log.info("HTTPS enabled");
   }
 
