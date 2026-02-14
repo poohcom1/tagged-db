@@ -81,18 +81,20 @@ export const TagEdit = ({
       : [];
   }, [input, lastToken, suggestions]);
 
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
   const apply = (tag: string) => {
     const next = prefix ? `${prefix}, ${tag}` : tag;
     setInput(next);
     setIndex(0);
+    // move cursor to end of input
+    textareaRef.current?.setSelectionRange(next.length, next.length);
   };
 
   const commit = () => {
     onChange?.(cleanTagText(input));
     setEditing(false);
   };
-
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const tags = parseTags(value ?? "");
 
@@ -130,7 +132,6 @@ export const TagEdit = ({
         <textarea
           style={{ resize: "vertical" }}
           ref={textareaRef}
-          rows={1}
           value={input}
           autoFocus
           onFocus={(e) => {
