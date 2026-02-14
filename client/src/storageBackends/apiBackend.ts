@@ -162,7 +162,7 @@ async function fetchEndpoint<E extends Endpoint<unknown, unknown, unknown>>(
       fetch(baseUrl + buildUrl(endpoint, params), {
         method: endpoint.method.toUpperCase(),
         headers: {
-          ContentType: body ? "application/json" : "",
+          "Content-Type": body ? "application/json" : "",
           ...extraHeaders,
         },
         body: JSON.stringify(body),
