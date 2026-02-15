@@ -41,14 +41,22 @@ export const useStorageBackend = () => {
     );
   }, [currentStorage.queryParam]);
 
-  const setUseLocalStorage = useCallback(
-    () => setCurrentStorage(localStorageBackend),
-    [],
-  );
+  const setUseLocalStorage = useCallback(() => {
+    if (
+      currentStorage.backendType === "local" &&
+      currentStorage.id === localStorageBackend.id
+    )
+      return;
+    setCurrentStorage(localStorageBackend);
+  }, [currentStorage]);
 
   const setUseRemoteBackend = useCallback(
-    (url: string) => setCurrentStorage(apiBackend(url)),
-    [],
+    (url: string) => {
+      if (currentStorage.backendType === "api" && currentStorage.url === url)
+        return;
+      setCurrentStorage(apiBackend(url));
+    },
+    [currentStorage],
   );
 
   return {

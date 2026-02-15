@@ -109,7 +109,7 @@ const TabButton = styled.a<{ $selected: boolean; $loading?: boolean }>`
     $selected ? "2px solid #c4c4c4" : "none"};
 
   cursor: ${({ $loading }) => ($loading ? "wait" : "pointer")};
-  user-select: none;
+  /* user-select: none; */
 `;
 
 const FilesContainerOutline = styled.div`
