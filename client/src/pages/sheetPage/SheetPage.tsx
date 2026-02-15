@@ -21,6 +21,12 @@ import { BaseButton } from "../../components/BaseButton";
 import { parseTags } from "@app/shared/sheetValidation";
 import { useDraggableWindow } from "../../hooks/useDraggableWindow";
 
+const SHEET_PAGE_RIGHT_PADDING = 4;
+const SHEET_PAGE_MAX_HEIGHT_OFFSET = 40;
+const SHEET_PAGE_DEFAULT_POSITION = { x: 48, y: 52 };
+const SHEET_PAGE_OVERFLOW_INITIAL_POSITION = { x: 0, y: 36 };
+const SHEET_PAGE_MIN_TOP = 36;
+
 // Styles
 const Background = styled.div`
   position: absolute;
@@ -29,11 +35,13 @@ const Background = styled.div`
   width: 100vw;
   overflow: hidden;
   box-sizing: border-box;
-  padding-right: 4px;
+  padding-right: ${SHEET_PAGE_RIGHT_PADDING}px;
 
   background-color: ${COLORS.DESKTOP};
 `;
 
+
+// max-height : sets as upper height limit to not overflow the sheetPage
 const MainContainer = styled.div`
   position: absolute;
   display: flex;
@@ -48,7 +56,7 @@ const MainContainer = styled.div`
 
   width: fit-content;
   max-width: 100%;
-  max-height: calc(100vh - 40px);
+  max-height: calc(100vh - ${SHEET_PAGE_MAX_HEIGHT_OFFSET}px);
 `;
 
 const FileHeader = styled.div<{ $dragging: boolean }>`
@@ -136,8 +144,8 @@ export const SheetPage = () => {
   const { storageBackend: storageBackend } = useStorageBackend();
   const { containerRef, dragHandleProps, windowStyle, isDragging, setWindowPosition } =
     useDraggableWindow({
-      initialPosition: { x: 48, y: 52 },
-      minTop: 36,
+      initialPosition: SHEET_PAGE_DEFAULT_POSITION,
+      minTop: SHEET_PAGE_MIN_TOP,
     });
   const tableViewportRef = useRef<HTMLDivElement | null>(null);
   const initialPositionResolvedRef = useRef(false);
@@ -236,6 +244,9 @@ export const SheetPage = () => {
     });
   }, [filterKeys, sheetData, sortby]);
 
+  // SheetPage only: the table container can expand with rows/columns on load,
+  // so we resolve the initial draggable position in a layout effect before paint.
+  // MySheetsPage uses a fixed-size container and does not need this step.
   useLayoutEffect(() => {
     if (initialPositionResolvedRef.current) {
       return;
@@ -250,7 +261,9 @@ export const SheetPage = () => {
     const hasHeightOverflow = tableViewport.scrollHeight > tableViewport.clientHeight;
 
     setWindowPosition(
-      hasWidthOverflow || hasHeightOverflow ? { x: 0, y: 36 } : { x: 48, y: 52 },
+      hasWidthOverflow || hasHeightOverflow
+        ? SHEET_PAGE_OVERFLOW_INITIAL_POSITION
+        : SHEET_PAGE_DEFAULT_POSITION,
     );
 
     initialPositionResolvedRef.current = true;

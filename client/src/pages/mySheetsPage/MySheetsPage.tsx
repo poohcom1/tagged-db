@@ -18,6 +18,10 @@ import { border } from "../../styles/mixins";
 import { DesktopHeader } from "../../components/desktop/DesktopHeader";
 import { useDraggableWindow } from "../../hooks/useDraggableWindow";
 
+const MY_SHEETS_INITIAL_POSITION_RATIO = 0.1;
+const MY_SHEETS_INITIAL_POSITION_FALLBACK = 40;
+const MY_SHEETS_MAX_HEIGHT_OFFSET = 40;
+
 interface Sheet {
   id: string;
   name: string;
@@ -42,7 +46,7 @@ const FolderContainer = styled.div`
   background-color: ${COLORS.PANEL};
   height: 80%;
   width: 80%;
-  max-height: calc(100vh - 40px);
+  max-height: calc(100vh - ${MY_SHEETS_MAX_HEIGHT_OFFSET}px);
   max-width: calc(100vw - 4px);
   ${border({})}
   display: flex;
@@ -208,11 +212,17 @@ export const MySheetsPage = () => {
   const { containerRef, dragHandleProps, windowStyle, isDragging } =
     useDraggableWindow({
       initialPosition: {
-        x: typeof window === "undefined" ? 40 : Math.round(window.innerWidth * 0.1),
+        x:
+          typeof window === "undefined"
+            ? MY_SHEETS_INITIAL_POSITION_FALLBACK
+            : Math.round(window.innerWidth * MY_SHEETS_INITIAL_POSITION_RATIO),
         y:
           typeof window === "undefined"
-            ? 40
-            : Math.max(34, Math.round(window.innerHeight * 0.1)),
+            ? MY_SHEETS_INITIAL_POSITION_FALLBACK
+            : Math.max(
+                34,
+                Math.round(window.innerHeight * MY_SHEETS_INITIAL_POSITION_RATIO),
+              ),
       },
       minTop: 34,
     });
