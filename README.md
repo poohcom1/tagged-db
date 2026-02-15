@@ -49,10 +49,24 @@ npm run dev
 
 3. Go to http://localhost:5173
 
-### Docker
+### Setting Up a Backend with Docker
 
-Server:
+1. Create a `.env` file in the /server directory.
+2. Setup a passkey if needed:
+
+- `AUTH_TYPE=none` for no passkey. If anyone knows your url they can nuke your spreadsheets.
+- `AUTH_TYPE=passkey` for a passkey.
+  - Set `AUTH_PASSKEY` to your passkey.
+  - Set `AUTH_JWT_SECRET` to a random string.
+
+3. Setup your https certs in a directory, and set the following in `.env` (example):
+   - `CERTS_PATH=/etc/certs`
+   - `HTTPS_KEY_PATH=/etc/certs/my-cert.key`
+   - `HTTPS_CERT_PATH=/etc/certs/my-cert.crt`
+4. Run the following docker command:
 
 ```sh
-docker compose -f server/docker-compose.yml up -d --force-recreate --build
+docker compose -f server/docker-compose.https.yml up -d --force-recreate --build
 ```
+
+5. Go to https://my-tagged-db.vercel.app/ and add your backend by clicking on "+".
