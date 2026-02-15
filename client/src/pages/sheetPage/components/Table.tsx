@@ -26,7 +26,7 @@ export const Th = styled.th`
 
 export const Tbody = styled.tbody`
   tr:nth-child(even) {
-    background: #e2ecf7;
+    background: #f1f1f1;
   }
 
   tr:nth-child(odd) {
