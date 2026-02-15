@@ -20,13 +20,14 @@ import { EditButton } from "../../components/EditButton";
 import { ColumnEditAction, SheetAction } from "@app/shared/types/action";
 import { useStorageBackend } from "../../hooks/useBackend";
 import { COLORS } from "../../styles/colors";
-import { FaFileCsv } from "react-icons/fa6";
-import { IoMdClose } from "react-icons/io";
+
 import { border } from "../../styles/mixins";
 import { DesktopHeader } from "../../components/desktop/DesktopHeader";
 import { BaseButton } from "../../components/BaseButton";
 import { parseTags } from "@app/shared/sheetValidation";
 import { useDraggableWindow } from "../../hooks/useDraggableWindow";
+import { WindowHeader } from "../../components/desktop/WindowHeader";
+import { FaFileCsv } from "react-icons/fa6";
 
 const MAX_HEIGHT_OFFSET = 40;
 const DEFAULT_POSITION = { x: 48, y: 52 };
@@ -61,31 +62,6 @@ const MainContainer = styled.div`
   width: fit-content;
   max-width: 100%;
   max-height: calc(100vh - ${MAX_HEIGHT_OFFSET}px);
-`;
-
-const FileHeader = styled.div<{ $dragging: boolean }>`
-  color: white;
-  background-color: ${COLORS.HEADER};
-  padding: 4px 8px;
-  margin-bottom: 4px;
-
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: ${({ $dragging }) => ($dragging ? "grabbing" : "grab")};
-  user-select: none;
-  touch-action: none;
-`;
-
-const FileHeaderCloseButton = styled.button`
-  margin-left: auto;
-
-  background-color: ${COLORS.PANEL};
-  ${border({ thickness: 2, isButton: true })};
-
-  &:hover {
-    cursor: pointer;
-  }
 `;
 
 const VContainer = styled.div`
@@ -156,9 +132,9 @@ export const SheetPage = () => {
   const { storageBackend: storageBackend } = useStorageBackend();
   const {
     containerRef,
+    isDragging,
     dragHandleProps,
     windowStyle,
-    isDragging,
     setWindowPosition,
   } = useDraggableWindow({
     initialPosition: DEFAULT_POSITION,
@@ -492,17 +468,18 @@ export const SheetPage = () => {
           visibility: isWindowReady ? "visible" : "hidden",
         }}
       >
-        <FileHeader {...dragHandleProps} $dragging={isDragging}>
-          <FaFileCsv /> {sheetData.name}.csv
-          <FileHeaderCloseButton
-            title={`Close ${sheetData.name}`}
-            onClick={() =>
-              (window.location.href = "/?" + storageBackend.queryParam)
-            }
-          >
-            <IoMdClose />
-          </FileHeaderCloseButton>
-        </FileHeader>
+        <WindowHeader
+          showCloseButton
+          onClose={() =>
+            (window.location.href = "/?" + storageBackend.queryParam)
+          }
+          closeToolTip={`Close "${sheetData.name}"`}
+          isDragging={isDragging}
+          dragHandleProps={dragHandleProps}
+        >
+          <FaFileCsv />
+          {sheetData.name}.csv
+        </WindowHeader>
 
         {/* Context panel */}
         {<ContextPanel />}

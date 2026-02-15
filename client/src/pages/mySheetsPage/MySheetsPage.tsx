@@ -17,6 +17,7 @@ import { COLORS } from "../../styles/colors";
 import { border } from "../../styles/mixins";
 import { DesktopHeader } from "../../components/desktop/DesktopHeader";
 import { useDraggableWindow } from "../../hooks/useDraggableWindow";
+import { WindowHeader } from "../../components/desktop/WindowHeader";
 
 const WINDOW_SIZE_RATIO = 0.8;
 const INITIAL_POSITION_RATIO = (1.0 - WINDOW_SIZE_RATIO) * 0.5;
@@ -52,16 +53,6 @@ const FolderContainer = styled.div`
   ${border({})}
   display: flex;
   flex-direction: column;
-`;
-
-const FolderHeader = styled.div<{ $dragging: boolean }>`
-  color: white;
-  background-color: ${COLORS.HEADER};
-  padding: 4px 8px;
-  margin-bottom: 4px;
-  cursor: ${({ $dragging }) => ($dragging ? "grabbing" : "grab")};
-  user-select: none;
-  touch-action: none;
 `;
 
 const ButtonContainer = styled.div`
@@ -210,7 +201,7 @@ const NameCell = styled.div`
 
 export const MySheetsPage = () => {
   const userRemotes = useUserRemotes();
-  const { containerRef, dragHandleProps, windowStyle, isDragging } =
+  const { containerRef, dragHandleProps, isDragging, windowStyle } =
     useDraggableWindow({
       initialPosition: {
         x:
@@ -415,9 +406,9 @@ export const MySheetsPage = () => {
         style={windowStyle}
         onClick={(event) => event.stopPropagation()}
       >
-        <FolderHeader {...dragHandleProps} $dragging={isDragging}>
-          <PiFoldersLight /> My Sheets
-        </FolderHeader>
+        <WindowHeader isDragging={isDragging} dragHandleProps={dragHandleProps}>
+          <PiFoldersLight /> My Sheets{" "}
+        </WindowHeader>
         <ButtonContainer>
           <MenuButton
             onClick={onCreateSheet}

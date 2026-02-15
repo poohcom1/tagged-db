@@ -10,11 +10,6 @@ const Container = styled.div`
   flex-grow: 1;
 `;
 
-const Title = styled.div`
-  font-weight: 600;
-  font-size: large;
-`;
-
 const EditTable = styled.table`
   width: 100%;
 `;
@@ -177,7 +172,12 @@ export const ColumnEdit = ({
         <>
           {enumState.idOrder.map((id, index) => (
             <EditRow key={index} label={`Option ${index + 1}`}>
-              <div style={{ display: "flex", gap: 4 }}>
+              <div
+                style={{
+                  display: "flex",
+                  gap: 4,
+                }}
+              >
                 <input
                   ref={(ref) => {
                     if (ref) inputFieldsRef.current[index] = ref;
@@ -226,7 +226,11 @@ export const ColumnEdit = ({
   }
 
   return (
-    <EditModalContainer isOpen={isOpen} onClose={onClose}>
+    <EditModalContainer
+      title={"Column Settings"}
+      isOpen={isOpen}
+      onClose={onClose}
+    >
       <Container
         onKeyDown={(e) => {
           if (e.key === "Enter") {
@@ -237,8 +241,6 @@ export const ColumnEdit = ({
           }
         }}
       >
-        <Title>Column Settings</Title>
-        <br />
         <EditTable>
           <tbody>
             <EditRow label="Title">
@@ -286,9 +288,16 @@ export const ColumnEdit = ({
           </tbody>
         </EditTable>
         {AdvancedEdit && <hr style={{ opacity: "50%" }} />}
-        <EditTable>
-          <tbody>{AdvancedEdit}</tbody>
-        </EditTable>
+        <div
+          style={{
+            maxHeight: "50vh",
+            overflowY: "scroll",
+          }}
+        >
+          <EditTable>
+            <tbody>{AdvancedEdit}</tbody>
+          </EditTable>
+        </div>
         <ButtonRow>
           <button onClick={onCommitAction}>Update</button>
           <button
