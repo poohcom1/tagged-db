@@ -33,6 +33,29 @@ export const PopupAlert = () => {
   const [promptValue, setPromptValue] = useState("");
 
   useEffect(() => {
+    if (!currentAlert) return;
+
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.key === "Enter") {
+        switch (currentAlert.type) {
+          case "alert":
+            popupStore.clear({ type: "alert" });
+            break;
+          case "confirm":
+            popupStore.clear({ type: "confirm", response: true });
+            break;
+          case "prompt":
+            popupStore.clear({ type: "prompt", response: promptValue });
+        }
+      }
+    };
+    window.addEventListener("keyup", onKeyUp);
+    return () => {
+      window.removeEventListener("keyup", onKeyUp);
+    };
+  }, [currentAlert, promptValue]);
+
+  useEffect(() => {
     if (!currentAlert) {
       return;
     }
@@ -65,7 +88,6 @@ export const PopupAlert = () => {
           <Container>{currentAlert?.message}</Container>
           <ConfirmRow>
             <button
-              autoFocus
               onClick={() =>
                 popupStore.clear({ type: "confirm", response: true })
               }
@@ -98,12 +120,6 @@ export const PopupAlert = () => {
               type="text"
               value={promptValue}
               onChange={(e) => setPromptValue(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  popupStore.clear({ type: "prompt", response: promptValue });
-                  setPromptValue("");
-                }
-              }}
             />
           </Container>
           <ConfirmRow>

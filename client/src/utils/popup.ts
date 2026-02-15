@@ -1,5 +1,5 @@
 // Types
-type PopupInfo =
+export type PopupInfo =
   | {
       type: "alert" | "confirm";
       message: string;
@@ -24,8 +24,11 @@ type PopupResponse =
       response: string | null;
     };
 
+const DELAY_PADDING = 10;
+
 // API
 export const popupAlert = async (message: string): Promise<void> => {
+  await new Promise((resolve) => setTimeout(resolve, DELAY_PADDING));
   setPopupAlert({ type: "alert", message });
   await new Promise<PopupResponse>((resolve) => {
     currentDoneCallback = resolve;
@@ -37,6 +40,7 @@ export const popupConfirm = async (
   message: string,
   title?: string,
 ): Promise<boolean> => {
+  await new Promise((resolve) => setTimeout(resolve, DELAY_PADDING));
   setPopupAlert({ type: "confirm", message, title });
   const response = await new Promise<PopupResponse>((resolve) => {
     currentDoneCallback = resolve;
@@ -51,6 +55,7 @@ export const popupPrompt = async (
   defaultPrompt?: string,
 ): Promise<string | null> => {
   setPopupAlert({ type: "prompt", message, defaultPrompt, title });
+  await new Promise((resolve) => setTimeout(resolve, DELAY_PADDING));
   const response = await new Promise<PopupResponse>((resolve) => {
     currentDoneCallback = resolve;
   });
