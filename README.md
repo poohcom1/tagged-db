@@ -8,12 +8,12 @@ A simple spreadsheet for tagging all your favorite things.
 
 ### Spreadsheet
 
-- [ ] Cell types
+- [x] Cell types
   - [x] Text / Links
   - [x] Number
   - [x] Dropdown
   - [x] Tags
-  - [ ] Dates
+  - [x] Dates
 - [ ] View
   - [x] Column sorting
   - [ ] Text filtering
@@ -70,4 +70,5 @@ docker compose -f server/docker-compose.https.yml up -d --force-recreate --build
 ```
 
 5. Go to https://my-tagged-db.vercel.app/ and add your backend by clicking on "+".
+
 
