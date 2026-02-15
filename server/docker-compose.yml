@@ -14,7 +14,7 @@ services:
       HTTPS_ENABLED: false
       HTTPS_KEY_PATH:
       HTTPS_CERT_PATH:
-      ADMIN_AUTH: false
+      AUTH_TYPE: none
 
     ports:
       - "${PORT:-3000}:${PORT:-3000}"
