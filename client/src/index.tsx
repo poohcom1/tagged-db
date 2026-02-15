@@ -5,6 +5,7 @@ import reportWebVitals from "./reportWebVitals";
 import { PageRoutes } from "./routes";
 import Modal from "react-modal";
 import { setupTabFocusDetection } from "./utils/tabFocus";
+import { PopupAlert } from "./components/PopupAlert";
 
 Modal.setAppElement("#root");
 
@@ -16,6 +17,7 @@ const root = ReactDOM.createRoot(
 root.render(
   <React.StrictMode>
     <PageRoutes />
+    <PopupAlert />
   </React.StrictMode>,
 );
 

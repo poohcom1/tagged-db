@@ -28,6 +28,7 @@ import { parseTags } from "@app/shared/sheetValidation";
 import { useDraggableWindow } from "../../hooks/useDraggableWindow";
 import { WindowHeader } from "../../components/desktop/WindowHeader";
 import { FaFileCsv } from "react-icons/fa6";
+import { popupAlert, popupConfirm } from "../../utils/popup";
 
 const MAX_HEIGHT_OFFSET = 40;
 const DEFAULT_POSITION = { x: 48, y: 52 };
@@ -165,7 +166,7 @@ export const SheetPage = () => {
     if (res.ok) {
       setSheetData(res.value);
     } else {
-      alert(res.error);
+      await popupAlert(res.error);
     }
   }, [sheetId, storageBackend]);
 
@@ -188,14 +189,14 @@ export const SheetPage = () => {
       };
       const rowsResult = migrator.reduce(sheetData, action);
       if (!rowsResult.ok) {
-        alert(rowsResult.error);
+        await popupAlert(rowsResult.error);
         return;
       }
       setSheetData(rowsResult.value);
 
-      storageBackend.updateSheet(sheetId, action).then((res) => {
+      storageBackend.updateSheet(sheetId, action).then(async (res) => {
         if (!res.ok) {
-          alert(res.error);
+          await popupAlert(res.error);
           loadSheet();
         }
       });
@@ -286,7 +287,10 @@ export const SheetPage = () => {
 
   if (!sheetData) return null;
 
-  const onUpdateColumn = (columnId: string, actions: ColumnEditAction[]) => {
+  const onUpdateColumn = async (
+    columnId: string,
+    actions: ColumnEditAction[],
+  ) => {
     if (actions.length === 0) {
       return;
     }
@@ -300,20 +304,20 @@ export const SheetPage = () => {
     };
     const updatedSheetData = migrator.reduce(sheetData, action);
     if (!updatedSheetData.ok) {
-      alert(updatedSheetData.error);
+      await popupAlert(updatedSheetData.error);
       return;
     }
     setSheetData(updatedSheetData.value);
 
-    storageBackend.updateSheet(sheetId, action).then((res) => {
+    storageBackend.updateSheet(sheetId, action).then(async (res) => {
       if (!res.ok) {
-        alert(res.error);
+        await popupAlert(res.error);
         loadSheet();
       }
     });
   };
 
-  const onDeleteColumn = (columnId: string) => {
+  const onDeleteColumn = async (columnId: string) => {
     const action: SheetAction = {
       action: "delete_column",
       params: {
@@ -322,13 +326,15 @@ export const SheetPage = () => {
     };
     const updatedRes = migrator.reduce(sheetData, action);
     if (!updatedRes.ok) {
-      alert("Failed to delete column: " + updatedRes.error);
+      await popupAlert("Failed to delete column: " + updatedRes.error);
       return;
     }
     setSheetData(updatedRes.value);
-    storageBackend.updateSheet(sheetId, action).then((res) => {
+    storageBackend.updateSheet(sheetId, action).then(async (res) => {
       if (!res.ok) {
-        alert("[Server Error] Failed to delete column: " + res.error);
+        await popupAlert(
+          "[Server Error] Failed to delete column: " + res.error,
+        );
         loadSheet();
       }
     });
@@ -346,13 +352,13 @@ export const SheetPage = () => {
 
     const updateRes = migrator.reduce(sheetData, action);
     if (!updateRes.ok) {
-      alert("Failed to create column: " + updateRes.error);
+      await popupAlert("Failed to create column: " + updateRes.error);
       return;
     }
     setSheetData(updateRes.value);
     const res = await storageBackend.updateSheet(sheetId, action);
     if (!res.ok) {
-      alert("[Server Error] Failed to create column: " + res.error);
+      await popupAlert("[Server Error] Failed to create column: " + res.error);
       loadSheet();
     }
   };
@@ -366,20 +372,20 @@ export const SheetPage = () => {
     };
     const updatedRes = migrator.reduce(sheetData, action);
     if (!updatedRes.ok) {
-      alert("Failed to create row: " + updatedRes.error);
+      await popupAlert("Failed to create row: " + updatedRes.error);
       return;
     }
     setSheetData(updatedRes.value);
-    storageBackend.updateSheet(sheetId, action).then((res) => {
+    storageBackend.updateSheet(sheetId, action).then(async (res) => {
       if (!res.ok) {
-        alert("[Server Error] Failed to create row: " + res.error);
+        await popupAlert("[Server Error] Failed to create row: " + res.error);
         loadSheet();
       }
     });
   };
 
-  const onDeleteRow = (rowId: string) => {
-    if (!confirm("Are you sure you want to delete this row?")) {
+  const onDeleteRow = async (rowId: string) => {
+    if (!(await popupConfirm("Are you sure you want to delete this row?"))) {
       return;
     }
     const action: SheetAction = {
@@ -390,13 +396,13 @@ export const SheetPage = () => {
     };
     const updatedRes = migrator.reduce(sheetData, action);
     if (!updatedRes.ok) {
-      alert("Failed to delete row: " + updatedRes.error);
+      await popupAlert("Failed to delete row: " + updatedRes.error);
       return;
     }
     setSheetData(updatedRes.value);
-    storageBackend.updateSheet(sheetId, action).then((res) => {
+    storageBackend.updateSheet(sheetId, action).then(async (res) => {
       if (!res.ok) {
-        alert("[Server Error] Failed to delete row: " + res.error);
+        await popupAlert("[Server Error] Failed to delete row: " + res.error);
         loadSheet();
       }
     });

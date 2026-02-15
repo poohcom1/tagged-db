@@ -15,6 +15,8 @@ import {
   UPDATE_SHEET,
 } from "@app/shared/endpoints";
 import { SheetAction } from "@app/shared/types/action";
+import { popupPrompt } from "../utils/popup";
+import { getAuthToken, setAuthToken } from "../utils/authStore";
 
 // API
 export const REMOTE_URL_PARAM = "remote";
@@ -140,14 +142,6 @@ if (typeof window !== "undefined") {
   });
 }
 
-const getAuthToken = (baseUrl: string) => {
-  return localStorage.getItem("tagged_db.auth." + baseUrl) || null;
-};
-
-const setAuthToken = (baseUrl: string, token: string) => {
-  localStorage.setItem("tagged_db.auth." + baseUrl, token);
-};
-
 /**
  * @param baseUrl Base url without trailing slash
  */
@@ -175,7 +169,7 @@ async function fetchEndpoint<E extends Endpoint<unknown, unknown, unknown>>(
 
     let res = await fetchFunc();
     if (res.status === 401) {
-      const user = prompt("Passkey:") || "";
+      const user = (await popupPrompt(`Input remote passkey`, "Login")) || "";
 
       const loginBody: BodyOf<typeof LOGIN> = {
         accessType: "passkey",

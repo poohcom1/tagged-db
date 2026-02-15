@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { ModalContainer } from "../../../components/ModalContainer";
 import { ColumnEditAction, ColumnEditType } from "@app/shared/types/action";
+import { popupAlert, popupConfirm } from "../../../utils/popup";
 
 // Style
 const Container = styled.div`
@@ -93,7 +94,7 @@ export const ColumnEdit = ({
     }
   }, [column, columnId, sheetData.columns]);
 
-  const onCommitAction = useCallback(() => {
+  const onCommitAction = useCallback(async () => {
     if (!column) return;
 
     const actionArr: ColumnEditAction[] = [];
@@ -105,7 +106,7 @@ export const ColumnEdit = ({
         enumState.idOrder.map((o) => enumState.idToNames[o]),
       );
       if (!res.ok) {
-        alert(res.error);
+        await popupAlert(res.error);
         return;
       }
       actionArr.push({
@@ -298,9 +299,9 @@ export const ColumnEdit = ({
           <button onClick={onCommitAction}>Update</button>
           <button
             disabled={sheetData.columns.length === 1}
-            onClick={() => {
+            onClick={async () => {
               if (
-                confirm(
+                await popupConfirm(
                   `Are you sure you want to delete column "${column.title}"?`,
                 )
               ) {

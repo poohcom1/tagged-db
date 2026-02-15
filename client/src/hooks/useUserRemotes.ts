@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { clearAuthToken } from "../utils/authStore";
 
 interface RemoteBackend {
   url: string;
@@ -34,6 +35,7 @@ export const useUserRemotes = () => {
 
   const removeRemoteBackend = useCallback((backend: RemoteBackend) => {
     setRemotes((prev) => prev.filter((b) => b.url !== backend.url));
+    clearAuthToken(backend.url);
   }, []);
 
   return {
