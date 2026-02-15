@@ -17,19 +17,19 @@ A simple spreadsheet for tagging all your favorite things.
 - [ ] View
   - [x] Column sorting
   - [ ] Text filtering
-  - [ ] Tag filtering
+  - [x] Tag filtering
 - [ ] Refactoring
   - [x] Dropdown option renaming
   - [ ] Tag renaming
-- [ ] Navigation
-  - [ ] Cell tab controls
+- [x] Navigation
+  - [x] Cell tab controls
 
 ### File Manager
 
 - [x] Local storage
 - [x] Configurable remotes
   - [ ] MongoDB Backend
-  - [ ] FS Backend
+  - [x] FS Backend
   - [x] Memory Backend
 - [ ] Native file protocols integration
 - [ ] CSS export/import
@@ -70,3 +70,4 @@ docker compose -f server/docker-compose.https.yml up -d --force-recreate --build
 ```
 
 5. Go to https://my-tagged-db.vercel.app/ and add your backend by clicking on "+".
+
