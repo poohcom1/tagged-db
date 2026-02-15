@@ -97,6 +97,14 @@ const VContainer = styled.div`
   /* flex-grow: 1; */
 `;
 
+const VSep = styled.div`
+  margin: 0;
+  width: 1px;
+  height: 80%;
+  background-color: ${COLORS.DARK};
+  border-right: 1px solid white;
+`;
+
 // - Right column container
 const AddColumnTh = styled.th`
   background-color: ${COLORS.WHITE};
@@ -403,6 +411,62 @@ export const SheetPage = () => {
     });
   };
 
+  // Context panel
+  const ContextPanel = () => {
+    const contextPanelItems: React.ReactNode[] = [];
+    if (sortby) {
+      contextPanelItems.push(
+        <BaseButton onClick={() => setSortby(null)} title="Clear sort">
+          <span style={{ opacity: 0.7 }}>Sort: </span>
+          <span>
+            {sheetData.columns.find((c) => c.id === sortby.columnId)?.title +
+              " " +
+              (sortby.ascOrder ? "↑" : "↓")}
+          </span>
+        </BaseButton>,
+      );
+    }
+    if (Object.keys(filterKeys).length > 0) {
+      if (contextPanelItems.length > 0) {
+        contextPanelItems.push(<VSep />);
+      }
+
+      contextPanelItems.push(
+        <BaseButton onClick={() => setFilterKeys({})}>
+          <span style={{ opacity: 0.7 }}>Filter: </span>
+          <span>
+            {Object.entries(filterKeys).map(([key, value]) => {
+              const column = sheetData.columns.find((c) => c.id === key);
+              return (
+                <span key={key}>
+                  {column?.title}: {value.join(",")}
+                </span>
+              );
+            })}
+          </span>
+        </BaseButton>,
+      );
+    }
+
+    return (
+      <div
+        style={{
+          padding: "4px",
+          color: COLORS.GREY,
+          fontSize: "smaller",
+          fontWeight: 600,
+          display: "flex",
+          justifyContent: "start",
+          alignItems: "center",
+          height: "24px",
+          gap: "16px",
+        }}
+      >
+        {contextPanelItems}
+      </div>
+    );
+  };
+
   return (
     <Background>
       <DesktopHeader />
@@ -423,54 +487,7 @@ export const SheetPage = () => {
         </FileHeader>
 
         {/* Context panel */}
-        <div
-          style={{
-            padding: "4px",
-            color: COLORS.GREY,
-            fontSize: "smaller",
-            fontWeight: 600,
-            display: "flex",
-            alignItems: "center",
-            height: "24px",
-          }}
-        >
-          <div style={{ marginLeft: "auto" }}>
-            <BaseButton onClick={() => setFilterKeys({})}>
-              <>
-                {Object.keys(filterKeys).length > 0 && (
-                  <>
-                    <span style={{ opacity: 0.7 }}>Filter | </span>
-                    <span>
-                      {Object.entries(filterKeys).map(([key, value]) => {
-                        const column = sheetData.columns.find(
-                          (c) => c.id === key,
-                        );
-                        return (
-                          <span key={key}>
-                            {column?.title}: {value.join(",")}
-                          </span>
-                        );
-                      })}
-                    </span>
-                  </>
-                )}
-              </>
-            </BaseButton>
-            <BaseButton onClick={() => setSortby(null)} title="Clear sort">
-              {sortby ? (
-                <>
-                  <span style={{ opacity: 0.7 }}>Sort | </span>
-                  <span>
-                    {sheetData.columns.find((c) => c.id === sortby.columnId)
-                      ?.title +
-                      " " +
-                      (sortby.ascOrder ? "↑" : "↓")}
-                  </span>
-                </>
-              ) : null}
-            </BaseButton>
-          </div>
-        </div>
+        {<ContextPanel />}
 
         <VContainer ref={tableViewportRef}>
           {/* Table */}
