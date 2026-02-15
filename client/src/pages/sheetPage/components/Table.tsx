@@ -17,11 +17,13 @@ export const Th = styled.th`
   padding: 8px 12px;
   font-weight: 600;
   background: #e7f1f7;
-  outline: 1px solid #7d7d80;
-  border: none;
+
   // Sticky
   position: sticky;
   top: 0;
+  // - border doesn't work with sticky, hack with outline
+  outline: 1px solid #7d7d80;
+  border: none;
 `;
 
 export const Tbody = styled.tbody`
