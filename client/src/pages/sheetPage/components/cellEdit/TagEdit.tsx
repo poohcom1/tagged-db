@@ -2,16 +2,11 @@ import { cleanTagText, parseTags } from "@app/shared/sheetValidation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import { EditButton } from "../../../../components/EditButton";
+import { BaseTextEdit } from "./BaseTextEdit";
 
 // Styled
 const Container = styled.div`
   display: flex;
-`;
-
-const CustomEditButton = styled(EditButton)`
-  margin-left: auto;
-  text-align: right;
-  min-width: 25px;
 `;
 
 const Dropdown = styled.div`
@@ -51,7 +46,6 @@ export const TagEdit = ({
   tags: suggestions,
   onTagClicked,
 }: Props) => {
-  const [editing, setEditing] = useState(false);
   const [input, setInput] = useState("");
   const [index, setIndex] = useState(0);
 
@@ -91,17 +85,14 @@ export const TagEdit = ({
     textareaRef.current?.setSelectionRange(next.length, next.length);
   };
 
-  const commit = () => {
-    onChange?.(cleanTagText(input));
-    setEditing(false);
-  };
-
   const tags = parseTags(value ?? "");
 
-  if (!editing) {
-    return (
-      <Container>
-        <div style={{ maxWidth: "150px" }}>
+  return (
+    <BaseTextEdit
+      value={input}
+      onChange={setInput}
+      displayComponent={() => (
+        <div>
           {tags.map((tag, ind) => (
             <EditButton
               key={tag}
@@ -115,77 +106,65 @@ export const TagEdit = ({
             </EditButton>
           ))}
         </div>
-        <CustomEditButton
-          onClick={() => {
-            setEditing(true);
-          }}
-        >
-          edit
-        </CustomEditButton>
-      </Container>
-    );
-  }
-
-  return (
-    <>
-      <Container>
-        <textarea
-          style={{ resize: "vertical" }}
-          ref={textareaRef}
-          value={input}
-          autoFocus
-          onFocus={(e) => {
-            const element = e.target;
-            const length = element.value.length;
-            element.setSelectionRange(length, length);
-          }}
-          onChange={(e) => {
-            setInput(e.target.value);
-            setIndex(0);
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "ArrowDown") {
-              setIndex((i) => Math.min(i + 1, matches.length - 1));
-              e.preventDefault();
-            } else if (e.key === "ArrowUp") {
-              setIndex((i) => Math.max(i - 1, 0));
-              e.preventDefault();
-            } else if (e.key === "Tab") {
-              // cycle
-              setIndex((i) => (i + 1) % matches.length);
-              e.preventDefault();
-            } else if (e.key === "Enter") {
-              if (matches.length > 0 && matches[index]) {
-                apply(matches[index]);
-                e.preventDefault();
-              } else {
-                commit();
-                e.preventDefault();
-              }
-            } else if (e.key === "Escape") {
-              setEditing(false);
-              setInput(value ?? "");
-            }
-          }}
-          // onBlur={commit}
-        />
-        <CustomEditButton onClick={commit}>save</CustomEditButton>
-      </Container>
-      <Dropdown>
-        {matches.map((tag, i) => (
-          <Item
-            key={tag}
-            active={i === index}
-            onMouseDown={(e) => {
-              e.preventDefault();
-              apply(tag);
-            }}
-          >
-            {tag}
-          </Item>
-        ))}
-      </Dropdown>
-    </>
+      )}
+      inputComponent={({ setEditing, onBlur }) => (
+        <div>
+          <Container>
+            <textarea
+              style={{ resize: "vertical" }}
+              ref={textareaRef}
+              value={input}
+              autoFocus
+              onFocus={(e) => {
+                const element = e.target;
+                const length = element.value.length;
+                element.setSelectionRange(length, length);
+              }}
+              onChange={(e) => {
+                setInput(e.target.value);
+                setIndex(0);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "ArrowDown") {
+                  setIndex((i) => Math.min(i + 1, matches.length - 1));
+                  e.preventDefault();
+                } else if (e.key === "ArrowUp") {
+                  setIndex((i) => Math.max(i - 1, 0));
+                  e.preventDefault();
+                } else if (e.key === "Enter") {
+                  if (matches.length > 0 && matches[index]) {
+                    apply(matches[index]);
+                    e.preventDefault();
+                  } else {
+                    onChange?.(cleanTagText(input));
+                    setEditing(false);
+                    e.preventDefault();
+                  }
+                } else if (e.key === "Escape") {
+                  setEditing(false);
+                  setInput(value ?? "");
+                }
+              }}
+              onBlur={onBlur}
+            />
+          </Container>
+          <Dropdown>
+            {matches.map((tag, i) => (
+              <Item
+                key={tag}
+                active={i === index}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  apply(tag);
+                }}
+              >
+                {tag}
+              </Item>
+            ))}
+          </Dropdown>
+        </div>
+      )}
+    />
   );
 };
 

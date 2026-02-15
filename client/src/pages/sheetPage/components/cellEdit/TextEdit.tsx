@@ -1,25 +1,11 @@
-import { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
-import { EditButton } from "../../../../components/EditButton";
 import { BaseInput } from "../../../../components/BaseInput";
-
-const Container = styled.div`
-  display: flex;
-  align-items: center;
-  flex-grow: 1;
-  gap: 4px;
-  width: fix-content;
-`;
+import { BaseTextEdit } from "./BaseTextEdit";
 
 const Input = styled(BaseInput)`
   padding: 0;
   min-width: 50px;
-`;
-
-const CustomEditButton = styled(EditButton)`
-  margin-left: auto;
-  text-align: right;
-  min-width: 25px;
+  width: 100%;
 `;
 
 interface Props {
@@ -28,102 +14,47 @@ interface Props {
 }
 
 export const TextEdit = ({ value, onChange }: Props) => {
-  const [currentValue, setCurrentValue] = useState(value);
-  const [editing, setEditing] = useState(false);
-  const [displayWidth, setDisplayWidth] = useState<number | undefined>(
-    undefined,
-  );
-
-  useEffect(() => {
-    setCurrentValue(value);
-  }, [value]);
-
-  useEffect(() => {
-    setDisplayWidth(measureRef.current?.scrollWidth);
-  }, [currentValue]);
-
-  const containerRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const saveRef = useRef<HTMLButtonElement>(null);
-
-  const measureRef = useRef<HTMLDivElement>(null);
-
-  const isLink =
-    currentValue?.startsWith("http://") || currentValue?.startsWith("https://");
-
-  const startEdit = () => {
-    setEditing(true);
-    setTimeout(() => inputRef.current?.select(), 50);
-  };
+  const isLink = value?.startsWith("http://") || value?.startsWith("https://");
 
   return (
-    <Container ref={containerRef}>
-      <div
-        ref={measureRef}
-        style={{
-          ...(editing
-            ? {
-                position: "absolute",
-                opacity: "0",
-                pointerEvents: "none",
-                whiteSpace: "nowrap",
-              }
-            : {}),
-          margin: "0px",
-          padding: "8px",
-          border: "2px solid transparent",
-        }}
-      >
-        {!editing && isLink ? (
+    <BaseTextEdit
+      autoResize
+      value={value}
+      onChange={onChange}
+      displayComponent={({ value }) =>
+        isLink ? (
           <a href={value} target="_blank">
             {value}
           </a>
         ) : (
-          <span style={{ fontWeight: 600 }}>
-            {editing ? currentValue : value}
-          </span>
-        )}
-      </div>
-      <Input
-        style={{ width: displayWidth + "px" }}
-        hidden={!editing}
-        ref={inputRef}
-        value={currentValue}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            onChange?.(currentValue ?? "");
-            setEditing(false);
-            inputRef.current?.blur();
-          } else if (e.key === "Escape") {
-            setEditing(false);
-            inputRef.current?.blur();
-          }
-        }}
-        onChange={(e) => {
-          setCurrentValue(e.target.value);
-        }}
-        onBlur={(e) => {
-          if (e.relatedTarget === saveRef.current) {
-            return;
-          }
-          onChange?.(currentValue ?? "");
-          setEditing(false);
-        }}
-      />
-      <CustomEditButton
-        ref={saveRef}
-        onClick={() => {
-          if (!editing) {
-            startEdit();
-          } else {
-            onChange?.(currentValue ?? "");
-            setEditing(false);
-            inputRef.current?.blur();
-          }
-        }}
-      >
-        {!editing ? "edit" : "save"}
-      </CustomEditButton>
-    </Container>
+          <span style={{ fontWeight: 600 }}>{value}</span>
+        )
+      }
+      inputComponent={({
+        currentValue,
+        setCurrentValue: onCurrentValueChange,
+        setEditing,
+        inputRef,
+        onBlur,
+      }) => (
+        <Input
+          tabIndex={0}
+          ref={inputRef}
+          value={currentValue}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              onCurrentValueChange?.(currentValue ?? "");
+              setEditing(false);
+              inputRef.current?.blur();
+            } else if (e.key === "Escape") {
+              setEditing(false);
+              inputRef.current?.blur();
+            }
+          }}
+          onChange={(e) => onCurrentValueChange?.(e.target.value)}
+          onBlur={onBlur}
+        />
+      )}
+    />
   );
 };
