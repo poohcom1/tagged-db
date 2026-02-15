@@ -158,6 +158,7 @@ function updateColumn(
 
       column.type = payload.toType;
 
+      // custom conversion
       switch (column.type) {
         case "text":
           break;

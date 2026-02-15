@@ -159,16 +159,17 @@ export const TagEdit = ({
                   setIndex((i) => (i + 1) % matches.length);
                   e.preventDefault();
                 } else if (e.key === "Enter") {
-                  if (matches.length > 0 && matches[index]) {
+                  if (matches[index]) {
                     apply(matches[index]);
-                    e.preventDefault();
-                  } else {
-                    commit();
                     e.preventDefault();
                   }
                 }
               }
-              if (e.key === "Escape") {
+
+              if (e.key === "Enter ") {
+                commit();
+                e.preventDefault();
+              } else if (e.key === "Escape") {
                 setEditing(false);
                 setInput(value ?? "");
               }
@@ -188,20 +189,22 @@ export const TagEdit = ({
           {editing ? "Save" : "Edit"}
         </CustomEditButton>
       </Container>
-      <Dropdown>
-        {matches.map((tag, i) => (
-          <Item
-            key={tag}
-            active={i === index}
-            onMouseDown={(e) => {
-              e.preventDefault();
-              apply(tag);
-            }}
-          >
-            {tag}
-          </Item>
-        ))}
-      </Dropdown>
+      {matches.length > 0 && (
+        <Dropdown>
+          {matches.map((tag, i) => (
+            <Item
+              key={tag}
+              active={i === index}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                apply(tag);
+              }}
+            >
+              {tag}
+            </Item>
+          ))}
+        </Dropdown>
+      )}
     </>
   );
 };

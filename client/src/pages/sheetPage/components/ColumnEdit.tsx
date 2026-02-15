@@ -29,12 +29,13 @@ const ButtonRow = styled.div`
 
 // Component
 
-const COLUMN_TYPES: ColumnType[] = ["text", "number", "enum", "tags"];
+const COLUMN_TYPES: ColumnType[] = ["text", "number", "enum", "tags", "date"];
 const COLUMN_TYPE_NAMES: Record<ColumnType, string> = {
   text: "Text",
   number: "Number",
   enum: "Dropdown",
   tags: "Tags",
+  date: "Date",
 };
 
 interface Prop {
