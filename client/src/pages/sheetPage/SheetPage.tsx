@@ -497,6 +497,20 @@ export const SheetPage = () => {
           <Table style={{ flexGrow: 1 }}>
             <Thead>
               <tr>
+                <Th
+                  style={{
+                    textAlign: "center",
+                    fontSize: "larger",
+                    fontWeight: 700,
+                  }}
+                >
+                  <EditButton
+                    onClick={() => setSortby(null)}
+                    style={{ color: COLORS.HEADER_TITLE }}
+                  >
+                    #
+                  </EditButton>
+                </Th>
                 {sheetData?.columns.map((column, ind) => (
                   <Th key={column.id}>
                     <HeaderCell
@@ -555,6 +569,9 @@ export const SheetPage = () => {
               {/* Rows */}
               {rows.map((row) => (
                 <tr key={row.id}>
+                  <Td id="#" style={{ textAlign: "center", color: "#353535" }}>
+                    {sheetData.rows.indexOf(row) + 1}
+                  </Td>
                   {sheetData.columns.map((column) => (
                     <Cell
                       rowId={row.id}

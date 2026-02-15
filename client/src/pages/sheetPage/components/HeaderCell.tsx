@@ -1,6 +1,7 @@
 import styled from "styled-components";
 import { EditButton } from "../../../components/EditButton";
 import { BaseButton } from "../../../components/BaseButton";
+import { COLORS } from "../../../styles/colors";
 
 // Style
 const HeaderContainer = styled.div`
@@ -33,7 +34,7 @@ const ArrowButton = styled(BaseButton)`
 export const HeaderButton = styled(EditButton)<{ $underline?: boolean }>`
   text-decoration: ${({ $underline }) =>
     $underline ? "underline" : "inherit"};
-  color: #2e5ca1;
+  color: ${COLORS.HEADER_TITLE};
 
   &:hover {
     text-decoration: underline;
