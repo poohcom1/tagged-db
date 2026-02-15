@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { apiBackend } from "./apiBackend";
-import { localStorageBackend } from "./localStorageBackend";
-import { StorageBackend } from "./storageBackend";
+import { apiBackend } from "../storageBackends/apiBackend";
+import { localStorageBackend } from "../storageBackends/localStorageBackend";
+import { StorageBackend } from "../storageBackends/storageBackend";
 
 export const REMOTE_URL_PARAM = "remote";
 
