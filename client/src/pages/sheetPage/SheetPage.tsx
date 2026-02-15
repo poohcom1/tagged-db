@@ -169,6 +169,9 @@ export const SheetPage = () => {
       setSheetData(res.value);
     } else {
       await popupAlert(res.error);
+
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      window.location.href = "/";
     }
   }, [sheetId, storageBackend]);
 
