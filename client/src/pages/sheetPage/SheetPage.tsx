@@ -21,11 +21,10 @@ import { BaseButton } from "../../components/BaseButton";
 import { parseTags } from "@app/shared/sheetValidation";
 import { useDraggableWindow } from "../../hooks/useDraggableWindow";
 
-const SHEET_PAGE_RIGHT_PADDING = 4;
-const SHEET_PAGE_MAX_HEIGHT_OFFSET = 40;
-const SHEET_PAGE_DEFAULT_POSITION = { x: 48, y: 52 };
-const SHEET_PAGE_OVERFLOW_INITIAL_POSITION = { x: 0, y: 36 };
-const SHEET_PAGE_MIN_TOP = 36;
+const MAX_HEIGHT_OFFSET = 40;
+const DEFAULT_POSITION = { x: 48, y: 52 };
+const MIN_TOP = 36; // 36 number came from header height
+const OVERFLOW_INITIAL_POSITION = { x: 0, y: MIN_TOP };
 
 // Styles
 const Background = styled.div`
@@ -35,7 +34,6 @@ const Background = styled.div`
   width: 100vw;
   overflow: hidden;
   box-sizing: border-box;
-  padding-right: ${SHEET_PAGE_RIGHT_PADDING}px;
 
   background-color: ${COLORS.DESKTOP};
 `;
@@ -56,7 +54,7 @@ const MainContainer = styled.div`
 
   width: fit-content;
   max-width: 100%;
-  max-height: calc(100vh - ${SHEET_PAGE_MAX_HEIGHT_OFFSET}px);
+  max-height: calc(100vh - ${MAX_HEIGHT_OFFSET}px);
 `;
 
 const FileHeader = styled.div<{ $dragging: boolean }>`
@@ -144,8 +142,8 @@ export const SheetPage = () => {
   const { storageBackend: storageBackend } = useStorageBackend();
   const { containerRef, dragHandleProps, windowStyle, isDragging, setWindowPosition } =
     useDraggableWindow({
-      initialPosition: SHEET_PAGE_DEFAULT_POSITION,
-      minTop: SHEET_PAGE_MIN_TOP,
+      initialPosition: DEFAULT_POSITION,
+      minTop: MIN_TOP,
     });
   const tableViewportRef = useRef<HTMLDivElement | null>(null);
   const initialPositionResolvedRef = useRef(false);
@@ -262,8 +260,8 @@ export const SheetPage = () => {
 
     setWindowPosition(
       hasWidthOverflow || hasHeightOverflow
-        ? SHEET_PAGE_OVERFLOW_INITIAL_POSITION
-        : SHEET_PAGE_DEFAULT_POSITION,
+        ? OVERFLOW_INITIAL_POSITION
+        : DEFAULT_POSITION,
     );
 
     initialPositionResolvedRef.current = true;

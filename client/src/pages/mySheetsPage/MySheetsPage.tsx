@@ -18,9 +18,10 @@ import { border } from "../../styles/mixins";
 import { DesktopHeader } from "../../components/desktop/DesktopHeader";
 import { useDraggableWindow } from "../../hooks/useDraggableWindow";
 
-const MY_SHEETS_INITIAL_POSITION_RATIO = 0.1;
-const MY_SHEETS_INITIAL_POSITION_FALLBACK = 40;
-const MY_SHEETS_MAX_HEIGHT_OFFSET = 40;
+const WINDOW_SIZE_RATIO = 0.8;
+const INITIAL_POSITION_RATIO = (1.0 - WINDOW_SIZE_RATIO) * 0.5;
+const INITIAL_POSITION_FALLBACK = 40;
+const MAX_HEIGHT_OFFSET = 40;
 
 interface Sheet {
   id: string;
@@ -44,9 +45,9 @@ const FolderContainer = styled.div`
   padding: 6px;
   color: black;
   background-color: ${COLORS.PANEL};
-  height: 80%;
-  width: 80%;
-  max-height: calc(100vh - ${MY_SHEETS_MAX_HEIGHT_OFFSET}px);
+  height: ${WINDOW_SIZE_RATIO * 100}%;
+  width: ${WINDOW_SIZE_RATIO * 100}%;
+  max-height: calc(100vh - ${MAX_HEIGHT_OFFSET}px);
   max-width: calc(100vw - 4px);
   ${border({})}
   display: flex;
@@ -179,7 +180,7 @@ const File = styled.a<FileProps>`
   &:hover {
     border: 1px solid #00000033;
     text-decoration: ${({ $selected }) =>
-      $selected ? "underline" : "inherit"};
+    $selected ? "underline" : "inherit"};
     cursor: pointer;
   }
 
@@ -214,15 +215,15 @@ export const MySheetsPage = () => {
       initialPosition: {
         x:
           typeof window === "undefined"
-            ? MY_SHEETS_INITIAL_POSITION_FALLBACK
-            : Math.round(window.innerWidth * MY_SHEETS_INITIAL_POSITION_RATIO),
+            ? INITIAL_POSITION_FALLBACK
+            : Math.round(window.innerWidth * INITIAL_POSITION_RATIO),
         y:
           typeof window === "undefined"
-            ? MY_SHEETS_INITIAL_POSITION_FALLBACK
+            ? INITIAL_POSITION_FALLBACK
             : Math.max(
-                34,
-                Math.round(window.innerHeight * MY_SHEETS_INITIAL_POSITION_RATIO),
-              ),
+              34,
+              Math.round(window.innerHeight * INITIAL_POSITION_RATIO),
+            ),
       },
       minTop: 34,
     });
