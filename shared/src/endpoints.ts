@@ -1,6 +1,19 @@
 import { SheetAction } from "./types/action.js";
 import { SheetData, SheetMeta } from "./types/sheet.js";
 
+type LoginType = "passkey" | "user"; // user is not implemented currently
+type LoginBody =
+  | { accessType: "passkey"; passkey: string }
+  | { accessType: "user"; username: string; password: string };
+export const LOGIN: Endpoint<
+  undefined,
+  LoginBody,
+  { ok: true; token: string } | { ok: false; error: string }
+> = {
+  url: "/api/login",
+  method: "post",
+};
+
 export const GET_SHEETS: Endpoint<undefined, undefined, SheetMeta[]> = {
   url: "/api/sheets",
   method: "get",

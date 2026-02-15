@@ -1,12 +1,12 @@
 import Fastify from "fastify";
 import fs from "fs";
 import cors from "@fastify/cors";
-import basicAuth from "@fastify/basic-auth";
 import {
   CREATE_SHEET,
   DELETE_SHEET,
   GET_SHEETS,
   GET_SHEET_DATA,
+  LOGIN,
   RENAME_SHEET,
   UPDATE_SHEET,
   type EndpointOf,
@@ -50,31 +50,76 @@ if (
   }
 
   // Static
-  const ENABLE_ADMIN_AUTH = process.env.ADMIN_AUTH === "true";
+  const useAuth = process.env.AUTH_TYPE !== "none";
 
   await server.register(cors, {
     origin: true,
-    credentials: ENABLE_ADMIN_AUTH,
   });
 
-  // HTTP
+  // AUTH
+  if (useAuth) {
+    const ADMIN_COOKIE = "admin_token";
 
-  if (ENABLE_ADMIN_AUTH) {
-    server.log.info("Admin auth enabled");
-    await server.register(basicAuth, {
-      validate: async (username, password, req, reply) => {
-        if (
-          username !== process.env.ADMIN_USER ||
-          password !== process.env.ADMIN_PASS
-        ) {
-          return new Error("Unauthorized");
-        }
-      },
-      authenticate: true,
+    server.log.info("Passkey auth enabled");
+
+    await server.register(require("@fastify/cookie"));
+    await server.register(require("@fastify/jwt"), {
+      secret: process.env.AUTH_JWT_SECRET || "dev-secret-change-me",
     });
 
-    server.after(() => {
-      server.addHook("onRequest", server.basicAuth);
+    server[LOGIN.method]<EndpointOf<typeof LOGIN>>(
+      LOGIN.url,
+      async function handler(request, reply) {
+        if (request.body.accessType === "passkey") {
+          const authPassKey = process.env.AUTH_PASSKEY;
+
+          if (!authPassKey) {
+            server.log.error(
+              "Auth misconfigured: AUTH_TYPE is passkey but AUTH_PASSKEY not set",
+            );
+            return reply
+              .code(401)
+              .send({ ok: false, error: "Auth misconfigured." });
+          }
+
+          server.log.info("Passkey: " + request.body.passkey);
+          if (request.body.passkey !== authPassKey) {
+            return reply
+              .code(401)
+              .send({ ok: false, error: "Unauthorized: Invalid passkey" });
+          }
+
+          server.log.info("Authorized");
+
+          const token = server.jwt.sign(
+            { role: "admin" },
+            { expiresIn: "30d" },
+          );
+
+          reply.send({ ok: true, token });
+        } else if (request.body.accessType === "user") {
+          // TODO: If you're implementing this, update the if statement condition
+          return reply.code(501).send({ ok: false, error: "Not implemented" });
+        }
+      },
+    );
+
+    server.addHook("onRequest", async (req, reply) => {
+      try {
+        if (req.routeOptions.url === LOGIN.url) {
+          return;
+        }
+        const auth = req.headers.authorization;
+        if (!auth?.startsWith("Bearer ")) {
+          return reply.code(401).send({ error: "Missing token" });
+        }
+
+        const token = auth.slice(7);
+        await req.jwtVerify(token as any);
+      } catch (err) {
+        server.log.error(err);
+        reply.code(401).send({ error: "Unauthorized" });
+      }
     });
   }
 
@@ -83,7 +128,7 @@ if (
     return "pong";
   });
 
-  // My Sheets
+  // API
   const db = jsonFsDb;
 
   server[GET_SHEETS.method]<EndpointOf<typeof GET_SHEETS>>(

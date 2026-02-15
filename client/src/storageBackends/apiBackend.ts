@@ -9,6 +9,7 @@ import {
   Endpoint,
   GET_SHEET_DATA,
   GET_SHEETS,
+  LOGIN,
   ParamsOf,
   RENAME_SHEET,
   UPDATE_SHEET,
@@ -139,12 +140,12 @@ if (typeof window !== "undefined") {
   });
 }
 
-const getAuthHeader = (baseUrl: string) => {
-  return sessionStorage.getItem("tagged_db.auth." + baseUrl) || "";
+const getAuthToken = (baseUrl: string) => {
+  return localStorage.getItem("tagged_db.auth." + baseUrl) || null;
 };
 
-const setAuthHeader = (baseUrl: string, authHeader: string) => {
-  sessionStorage.setItem("tagged_db.auth." + baseUrl, authHeader);
+const setAuthToken = (baseUrl: string, token: string) => {
+  localStorage.setItem("tagged_db.auth." + baseUrl, token);
 };
 
 /**
@@ -158,38 +159,55 @@ async function fetchEndpoint<E extends Endpoint<unknown, unknown, unknown>>(
 ): Promise<Response> {
   startRequest();
   try {
-    const fetchFunc = (extraHeaders: Record<string, string>) =>
-      fetch(baseUrl + buildUrl(endpoint, params), {
+    const fetchFunc = (init: RequestInit = {}) => {
+      const token = getAuthToken(baseUrl);
+      return fetch(baseUrl + buildUrl(endpoint, params), {
         method: endpoint.method.toUpperCase(),
         headers: {
           "Content-Type": body ? "application/json" : "",
-          ...extraHeaders,
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...init.headers,
         },
         body: JSON.stringify(body),
+        ...init,
+      });
+    };
+
+    let res = await fetchFunc();
+    if (res.status === 401) {
+      const user = prompt("Passkey:") || "";
+
+      const loginBody: BodyOf<typeof LOGIN> = {
+        accessType: "passkey",
+        passkey: user,
+      };
+      const loginRes = await fetch(baseUrl + buildUrl(LOGIN, undefined), {
+        method: LOGIN.method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(loginBody),
       });
 
-    const authHeader = getAuthHeader(baseUrl);
-    let res = await fetchFunc(
-      authHeader
-        ? {
-            Authorization: getAuthHeader(baseUrl),
-          }
-        : {},
-    );
+      const loginResPayload = await loginRes.json();
 
-    if (res.status === 401) {
-      const user = prompt("Username:") || "";
-      const pass = prompt("Password:") || "";
+      if (!loginResPayload.ok) {
+        throw new Error("Invalid passkey!");
+      }
 
-      const authHeader = "Basic " + btoa(`${user}:${pass}`);
+      const token = loginResPayload.token;
+      setAuthToken(baseUrl, token);
+
       res = await fetchFunc({
-        Authorization: authHeader,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       if (res.status !== 401) {
-        setAuthHeader(baseUrl, authHeader);
+        setAuthToken(baseUrl, token);
       } else {
-        alert("Invalid credentials!");
+        throw new Error("Invalid credentials!");
       }
     }
 
