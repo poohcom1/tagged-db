@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { EditButton } from "../../../../components/EditButton";
 import { BaseInput } from "../../../../components/BaseInput";
+import { isTabFocus } from "../../../../utils/tabFocus";
 
 const Container = styled.div`
   display: flex;
@@ -60,7 +61,12 @@ export const TextEdit = ({ value, onChange }: Props) => {
     <Container ref={containerRef}>
       <div
         tabIndex={0}
-        onFocus={startEdit}
+        onFocus={() => {
+          if (isTabFocus()) {
+            startEdit();
+          }
+        }}
+        onDoubleClick={startEdit}
         ref={measureRef}
         style={{
           ...(editing
