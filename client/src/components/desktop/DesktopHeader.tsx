@@ -2,6 +2,7 @@ import styled from "styled-components";
 import { COLORS } from "../../styles/colors";
 import { border, center } from "../../styles/mixins";
 import { FaGithub as GithubIcon } from "react-icons/fa";
+import { BaseButton } from "../BaseButton";
 
 const HeaderContainer = styled.div`
   position: absolute;
@@ -13,6 +14,13 @@ const HeaderContainer = styled.div`
   background-color: ${COLORS.PANEL};
   ${border({})};
 
+  display: flex;
+  align-items: center;
+  padding: 0 4px;
+  gap: 8px;
+`;
+
+const StartButton = styled(BaseButton)`
   display: flex;
   align-items: center;
   padding: 0 4px;
@@ -46,10 +54,12 @@ const EndRowButton = styled.a`
 export const DesktopHeader = () => {
   return (
     <HeaderContainer>
-      <img height="16px" width="16px" src="/icon.png" />
-      <div>PocchiOS</div>
-      <div>|</div>
-      <div>My Tagged DB</div>
+      <StartButton onClick={() => (window.location.href = "/")}>
+        <img height="16px" width="16px" src="/icon.png" />
+        <div>PocchiOS</div>
+        <div>|</div>
+        <div>My Tagged DB</div>
+      </StartButton>
 
       <EndRow>
         <EndRowButton
