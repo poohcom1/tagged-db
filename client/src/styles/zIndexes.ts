@@ -1,0 +1,2 @@
+export const MODAL_CONTAINER_Z_INDEX = 100;
+export const POPUP_CONTAINER_Z_INDEX = 101;

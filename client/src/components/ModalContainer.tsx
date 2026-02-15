@@ -2,6 +2,7 @@ import styled from "styled-components";
 import Modal from "react-modal";
 import { COLORS } from "../styles/colors";
 import { WindowHeader } from "./desktop/WindowHeader";
+import { MODAL_CONTAINER_Z_INDEX } from "../styles/zIndexes";
 
 // Styles
 const Container = styled.div`
@@ -36,8 +37,8 @@ export const ModalContainer = ({
       shouldCloseOnEsc={!blocking}
       style={{
         overlay: {
-          backgroundColor: "rgba(0, 0, 0, 0.664)",
-          zIndex: 100,
+          backgroundColor: "rgba(0, 0, 0, 0.548)",
+          zIndex: MODAL_CONTAINER_Z_INDEX,
         },
         content: {
           position: "absolute",
@@ -54,6 +55,7 @@ export const ModalContainer = ({
           borderBottom: "3px solid black",
           borderRadius: "0",
           padding: "8px",
+          zIndex: MODAL_CONTAINER_Z_INDEX,
         },
       }}
     >

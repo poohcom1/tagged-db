@@ -18,6 +18,7 @@ import { border } from "../../styles/mixins";
 import { DesktopHeader } from "../../components/desktop/DesktopHeader";
 import { useDraggableWindow } from "../../hooks/useDraggableWindow";
 import { WindowHeader } from "../../components/desktop/WindowHeader";
+import { popupAlert, popupConfirm, popupPrompt } from "../../utils/popup";
 
 const WINDOW_SIZE_RATIO = 0.8;
 const INITIAL_POSITION_RATIO = (1.0 - WINDOW_SIZE_RATIO) * 0.5;
@@ -276,17 +277,17 @@ export const MySheetsPage = () => {
     fetchSheets();
   }, [fetchSheets]);
 
-  const onCreateSheet = useCallback(() => {
-    const title = prompt("Enter sheet title:");
+  const onCreateSheet = useCallback(async () => {
+    const title = await popupPrompt("Enter sheet title", "Create sheet");
     if (!title) return;
 
     if (sheets?.find((sheet) => sheet.name === title)) {
-      alert(`Error: Sheet "${title}" already exists!`);
+      await popupAlert(`Error: Sheet "${title}" already exists!`);
       return;
     }
 
     setCreatingSheetMap((s) => ({ ...s, [storageBackend.id]: title }));
-    storageBackend.createSheet(title).then((res) => {
+    storageBackend.createSheet(title).then(async (res) => {
       setCreatingSheetMap((s) => ({ ...s, [storageBackend.id]: undefined }));
       if (res.ok) {
         setSheetsMap((m) => {
@@ -297,49 +298,55 @@ export const MySheetsPage = () => {
           };
         });
       } else {
-        alert(res.error);
+        await popupAlert(res.error);
         fetchSheets();
       }
     });
   }, [fetchSheets, sheets, storageBackend]);
 
-  const onRenameSheet = useCallback(() => {
+  const onRenameSheet = useCallback(async () => {
     if (!selectedSheet) {
       return;
     }
 
     const sheet = sheets?.find((sheet) => sheet.id === selectedSheet);
     if (!sheet) {
-      alert("Sheet not found");
+      popupAlert("Sheet not found");
       return;
     }
-    const title = prompt(`Enter new sheet title:`, sheet.name);
+    const title = await popupPrompt(
+      `Enter new sheet title`,
+      "Rename sheet",
+      sheet.name,
+    );
     if (!title) {
       return;
     }
     sheet.name = title;
     setSheetsMap((s) => ({ ...s }));
 
-    storageBackend.renameSheet(selectedSheet, title).then((res) => {
+    storageBackend.renameSheet(selectedSheet, title).then(async (res) => {
       if (!res.ok) {
-        alert(res.error);
+        await popupAlert(res.error);
         fetchSheets();
       }
     });
   }, [selectedSheet, sheets, storageBackend, fetchSheets]);
 
-  const onDeleteSheet = useCallback(() => {
+  const onDeleteSheet = useCallback(async () => {
     if (!selectedSheet) {
       return;
     }
 
     const sheet = sheets?.find((sheet) => sheet.id === selectedSheet);
     if (!sheet) {
-      alert("Sheet not found");
+      await popupAlert("Sheet not found");
       return;
     }
 
-    if (confirm(`Are you sure you want to delete "${sheet.name}"?`)) {
+    if (
+      await popupConfirm(`Are you sure you want to delete "${sheet.name}"?`)
+    ) {
       setSheetsMap((s) => {
         const storageSheets = s[storageBackend.id] || [];
         return {
@@ -350,9 +357,9 @@ export const MySheetsPage = () => {
         };
       });
 
-      storageBackend.deleteSheet(selectedSheet).then((res) => {
+      storageBackend.deleteSheet(selectedSheet).then(async (res) => {
         if (!res.ok) {
-          alert(res.error);
+          await popupAlert(res.error);
           fetchSheets();
         }
       });
@@ -464,13 +471,14 @@ export const MySheetsPage = () => {
               {backend.url}/
               <BasicButton
                 style={{ display: "flex", alignItems: "center" }}
-                onClick={(e) => {
+                onClick={async (e) => {
                   e.stopPropagation();
                   e.preventDefault();
-                  if (!confirm(`Close backend: ${backend.url}?`)) {
+                  if (!(await popupConfirm(`Close backend: ${backend.url}?`))) {
                     return;
                   }
                   userRemotes.removeRemote(backend);
+                  setSheetsMap((s) => ({ ...s, [backend.url]: [] }));
                   setBrokenStorages((s) => s.filter((s) => s !== backend.url));
                   setUseLocalStorage();
                 }}
@@ -487,9 +495,12 @@ export const MySheetsPage = () => {
             onClick={async () => {
               setAddingStorage(true);
               await new Promise((resolve) => setTimeout(resolve, 0));
-              let url = prompt("Remote backend URL:");
+              let url = await popupPrompt(
+                "Input URL for remote backend",
+                "Add a remote backend",
+              );
               if (url && userRemotes.remotes.find((b) => b.url === url)) {
-                alert("Already connected to remote!");
+                await popupAlert("Already connected to remote!");
                 setUseRemoteBackend(url);
               } else if (
                 url &&
@@ -505,7 +516,7 @@ export const MySheetsPage = () => {
                 setUseRemoteBackend(url);
               } else {
                 if (url) {
-                  alert("Invalid URL: " + url);
+                  await popupAlert("Invalid URL: " + url);
                 }
               }
               setAddingStorage(false);
@@ -562,7 +573,8 @@ export const MySheetsPage = () => {
                 Failed to connect to remote: {storageBackend.id}
               </FileCreating>
             ) : (
-              sheets?.length === 0 && (
+              sheets?.length === 0 &&
+              !loadingStorages.includes(storageBackend.id) && (
                 <FileCreating>
                   No sheets found. Select "New" to create one.
                 </FileCreating>
