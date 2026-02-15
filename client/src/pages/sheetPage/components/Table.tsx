@@ -15,10 +15,13 @@ export const Thead = styled.thead`
 export const Th = styled.th`
   text-align: left;
   padding: 8px 12px;
-  border-bottom: 2px solid #e5e7eb;
   font-weight: 600;
   background: #e7f1f7;
-  border: 1px solid #7d7d80;
+  outline: 1px solid #7d7d80;
+  border: none;
+  // Sticky
+  position: sticky;
+  top: 0;
 `;
 
 export const Tbody = styled.tbody`
