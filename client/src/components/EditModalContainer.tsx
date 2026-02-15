@@ -1,7 +1,7 @@
-import { IoMdClose } from "react-icons/io";
-import { BaseButton } from "./BaseButton";
 import styled from "styled-components";
 import Modal from "react-modal";
+import { COLORS } from "../styles/colors";
+import { WindowHeader } from "./desktop/WindowHeader";
 
 // Styles
 const Container = styled.div`
@@ -12,12 +12,20 @@ const Container = styled.div`
 
 // Component
 interface Props {
+  title: string;
   children?: React.ReactNode;
   isOpen: boolean;
   onClose?: () => void;
+  containerStyle?: React.CSSProperties;
 }
 
-export const EditModalContainer = ({ children, isOpen, onClose }: Props) => {
+export const EditModalContainer = ({
+  title,
+  children,
+  isOpen,
+  onClose,
+  containerStyle,
+}: Props) => {
   return (
     <Modal
       isOpen={isOpen}
@@ -34,15 +42,20 @@ export const EditModalContainer = ({ children, isOpen, onClose }: Props) => {
           top: "50%",
           left: "50%",
           transform: "translate(-50%, -50%)",
+          backgroundColor: COLORS.PANEL,
+          borderTop: "3px solid white",
+          borderLeft: "3px solid white",
+          borderRight: "3px solid black",
+          borderBottom: "3px solid black",
+          borderRadius: "0",
+          padding: "8px",
         },
       }}
     >
-      <Container>
-        {children}
-        <BaseButton onClick={onClose}>
-          <IoMdClose />
-        </BaseButton>
-      </Container>
+      <WindowHeader showCloseButton onClose={onClose} closeToolTip="Cancel">
+        {title}
+      </WindowHeader>
+      <Container style={containerStyle}>{children}</Container>
     </Modal>
   );
 };
