@@ -16,6 +16,12 @@ import { localStorageBackend } from "../../storageBackends/localStorageBackend";
 import { COLORS } from "../../styles/colors";
 import { border } from "../../styles/mixins";
 import { DesktopHeader } from "../../components/desktop/DesktopHeader";
+import { useDraggableWindow } from "../../hooks/useDraggableWindow";
+
+const WINDOW_SIZE_RATIO = 0.8;
+const INITIAL_POSITION_RATIO = (1.0 - WINDOW_SIZE_RATIO) * 0.5;
+const INITIAL_POSITION_FALLBACK = 40;
+const MAX_HEIGHT_OFFSET = 40;
 
 interface Sheet {
   id: string;
@@ -25,33 +31,37 @@ interface Sheet {
 }
 
 const Background = styled.div`
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
+  position: absolute;
+  inset: 0;
   height: 100vh;
   width: 100vw;
+  overflow: hidden;
 
   background-color: ${COLORS.DESKTOP};
 `;
 
 const FolderContainer = styled.div`
-  margin: 32px;
+  position: absolute;
   padding: 6px;
   color: black;
   background-color: ${COLORS.PANEL};
-  height: 80%;
-  width: 80%;
+  height: ${WINDOW_SIZE_RATIO * 100}%;
+  width: ${WINDOW_SIZE_RATIO * 100}%;
+  max-height: calc(100vh - ${MAX_HEIGHT_OFFSET}px);
+  max-width: calc(100vw - 4px);
   ${border({})}
   display: flex;
   flex-direction: column;
 `;
 
-const FolderHeader = styled.div`
+const FolderHeader = styled.div<{ $dragging: boolean }>`
   color: white;
   background-color: ${COLORS.HEADER};
   padding: 4px 8px;
   margin-bottom: 4px;
+  cursor: ${({ $dragging }) => ($dragging ? "grabbing" : "grab")};
+  user-select: none;
+  touch-action: none;
 `;
 
 const ButtonContainer = styled.div`
@@ -170,7 +180,7 @@ const File = styled.a<FileProps>`
   &:hover {
     border: 1px solid #00000033;
     text-decoration: ${({ $selected }) =>
-      $selected ? "underline" : "inherit"};
+    $selected ? "underline" : "inherit"};
     cursor: pointer;
   }
 
@@ -200,6 +210,23 @@ const NameCell = styled.div`
 
 export const MySheetsPage = () => {
   const userRemotes = useUserRemotes();
+  const { containerRef, dragHandleProps, windowStyle, isDragging } =
+    useDraggableWindow({
+      initialPosition: {
+        x:
+          typeof window === "undefined"
+            ? INITIAL_POSITION_FALLBACK
+            : Math.round(window.innerWidth * INITIAL_POSITION_RATIO),
+        y:
+          typeof window === "undefined"
+            ? INITIAL_POSITION_FALLBACK
+            : Math.max(
+              34,
+              Math.round(window.innerHeight * INITIAL_POSITION_RATIO),
+            ),
+      },
+      minTop: 34,
+    });
 
   const {
     storageBackend: storageBackend,
@@ -383,8 +410,12 @@ export const MySheetsPage = () => {
   return (
     <Background onClick={() => setSelectedSheet("")}>
       <DesktopHeader />
-      <FolderContainer>
-        <FolderHeader>
+      <FolderContainer
+        ref={containerRef}
+        style={windowStyle}
+        onClick={(event) => event.stopPropagation()}
+      >
+        <FolderHeader {...dragHandleProps} $dragging={isDragging}>
           <PiFoldersLight /> My Sheets
         </FolderHeader>
         <ButtonContainer>

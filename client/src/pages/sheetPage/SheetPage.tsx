@@ -1,6 +1,6 @@
 import { Column, ColumnValue, SheetData } from "@app/shared/types/sheet";
 import * as migrator from "@app/shared/sheetMigration";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Cell } from "./components/Cell";
 import { Table, Th, Thead, Tbody, HEADER_HEIGHT, Td } from "./components/Table";
 import styled from "styled-components";
@@ -19,21 +19,33 @@ import { border } from "../../styles/mixins";
 import { DesktopHeader } from "../../components/desktop/DesktopHeader";
 import { BaseButton } from "../../components/BaseButton";
 import { parseTags } from "@app/shared/sheetValidation";
+import { useDraggableWindow } from "../../hooks/useDraggableWindow";
+
+const MAX_HEIGHT_OFFSET = 40;
+const DEFAULT_POSITION = { x: 48, y: 52 };
+const MIN_TOP = 36; // 36 number came from header height
+const OVERFLOW_INITIAL_POSITION = { x: 0, y: MIN_TOP };
 
 // Styles
 const Background = styled.div`
   position: absolute;
+  inset: 0;
   height: 100vh;
   width: 100vw;
+  overflow: hidden;
+  box-sizing: border-box;
 
   background-color: ${COLORS.DESKTOP};
 `;
 
-const MainContainer = styled.div`
-  margin: 48px;
 
+// max-height : sets as upper height limit to not overflow the sheetPage
+const MainContainer = styled.div`
+  position: absolute;
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  box-sizing: border-box;
 
   padding: 6px;
   color: black;
@@ -41,9 +53,11 @@ const MainContainer = styled.div`
   ${border({})};
 
   width: fit-content;
+  max-width: 100%;
+  max-height: calc(100vh - ${MAX_HEIGHT_OFFSET}px);
 `;
 
-const FileHeader = styled.div`
+const FileHeader = styled.div<{ $dragging: boolean }>`
   color: white;
   background-color: ${COLORS.HEADER};
   padding: 4px 8px;
@@ -52,6 +66,9 @@ const FileHeader = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
+  cursor: ${({ $dragging }) => ($dragging ? "grabbing" : "grab")};
+  user-select: none;
+  touch-action: none;
 `;
 
 const FileHeaderCloseButton = styled.button`
@@ -68,6 +85,10 @@ const FileHeaderCloseButton = styled.button`
 const VContainer = styled.div`
   display: flex;
   flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
 
   border-top: 2px solid grey;
   border-left: 2px solid grey;
@@ -119,8 +140,16 @@ interface SortKey {
 
 export const SheetPage = () => {
   const { storageBackend: storageBackend } = useStorageBackend();
+  const { containerRef, dragHandleProps, windowStyle, isDragging, setWindowPosition } =
+    useDraggableWindow({
+      initialPosition: DEFAULT_POSITION,
+      minTop: MIN_TOP,
+    });
+  const tableViewportRef = useRef<HTMLDivElement | null>(null);
+  const initialPositionResolvedRef = useRef(false);
   const sheetId = useParams<{ id: string }>().id ?? "";
   const [sheetData, setSheetData] = useState<SheetData | null>(null);
+  const [isWindowReady, setIsWindowReady] = useState(false);
   const [currentEditColumnId, setCurrentEditColumnId] = useState<string | null>(
     null,
   );
@@ -212,6 +241,49 @@ export const SheetPage = () => {
       return true;
     });
   }, [filterKeys, sheetData, sortby]);
+
+  // SheetPage only: the table container can expand with rows/columns on load,
+  // so we resolve the initial draggable position in a layout effect before paint.
+  // MySheetsPage uses a fixed-size container and does not need this step.
+  useLayoutEffect(() => {
+    if (initialPositionResolvedRef.current) {
+      return;
+    }
+
+    const tableViewport = tableViewportRef.current;
+    if (!tableViewport) {
+      return;
+    }
+
+    const hasWidthOverflow = tableViewport.scrollWidth > tableViewport.clientWidth;
+    const hasHeightOverflow = tableViewport.scrollHeight > tableViewport.clientHeight;
+
+    setWindowPosition(
+      hasWidthOverflow || hasHeightOverflow
+        ? OVERFLOW_INITIAL_POSITION
+        : DEFAULT_POSITION,
+    );
+
+    initialPositionResolvedRef.current = true;
+    setIsWindowReady(true);
+  }, [setWindowPosition, sheetData]);
+
+  useEffect(() => {
+    const tableViewport = tableViewportRef.current;
+    if (!tableViewport) {
+      return;
+    }
+
+    const hasWidthOverflow = tableViewport.scrollWidth > tableViewport.clientWidth;
+    const hasHeightOverflow = tableViewport.scrollHeight > tableViewport.clientHeight;
+
+    if (hasWidthOverflow || hasHeightOverflow) {
+      setWindowPosition((current) => ({
+        x: hasWidthOverflow ? 0 : current.x,
+        y: hasHeightOverflow ? 0 : current.y,
+      }));
+    }
+  }, [setWindowPosition, sheetData?.columns.length, sheetData?.rows.length]);
 
   if (!sheetData) return null;
 
@@ -334,8 +406,11 @@ export const SheetPage = () => {
   return (
     <Background>
       <DesktopHeader />
-      <MainContainer>
-        <FileHeader>
+      <MainContainer
+        ref={containerRef}
+        style={{ ...windowStyle, visibility: isWindowReady ? "visible" : "hidden" }}
+      >
+        <FileHeader {...dragHandleProps} $dragging={isDragging}>
           <FaFileCsv /> {sheetData.name}.csv
           <FileHeaderCloseButton
             title={`Close ${sheetData.name}`}
@@ -397,7 +472,7 @@ export const SheetPage = () => {
           </div>
         </div>
 
-        <VContainer>
+        <VContainer ref={tableViewportRef}>
           {/* Table */}
           <Table style={{ flexGrow: 1 }}>
             <Thead>
