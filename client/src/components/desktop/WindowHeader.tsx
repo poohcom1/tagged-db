@@ -11,12 +11,14 @@ const Header = styled.div<{ $dragEnable: boolean; $dragging: boolean }>`
   margin-bottom: 4px;
 
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 8px;
   cursor: ${({ $dragEnable, $dragging }) =>
     $dragEnable ? ($dragging ? "grabbing" : "grab") : "inherit"};
   user-select: none;
   touch-action: none;
+  font-family: monospace;
+  font-weight: 600;
 `;
 
 const CloseButton = styled.button`
