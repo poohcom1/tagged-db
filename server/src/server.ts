@@ -54,12 +54,11 @@ if (
 
   await server.register(cors, {
     origin: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   });
 
   // AUTH
   if (useAuth) {
-    const ADMIN_COOKIE = "admin_token";
-
     server.log.info("Passkey auth enabled");
 
     await server.register(require("@fastify/cookie"));
