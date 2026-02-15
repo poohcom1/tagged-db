@@ -15,7 +15,16 @@ export interface SheetData extends SheetMeta {
   tagCache: Record<ColumnId, string[]>;
 }
 
-export type Column = TextColumn | NumberColumn | EnumColumn | TagsColumn;
+export type ColumnType = "text" | "number" | "enum" | "tags" | "date";
+
+export type ColumnValue = string;
+
+export type Column =
+  | TextColumn
+  | NumberColumn
+  | EnumColumn
+  | TagsColumn
+  | DateColumn;
 
 interface BaseColumn {
   id: string;
@@ -44,9 +53,9 @@ interface TagsColumn extends BaseColumn {
   type: "tags";
 }
 
-export type ColumnType = "text" | "number" | "enum" | "tags";
-
-export type ColumnValue = string;
+interface DateColumn extends BaseColumn {
+  type: "date";
+}
 
 interface Row {
   id: string;

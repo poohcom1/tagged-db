@@ -2,7 +2,7 @@ import { Err, Ok, Result } from "./types/result.js";
 import { ColumnType } from "./types/sheet.js";
 
 export function validateType(type: string): type is ColumnType {
-  return ["text", "number", "enum", "tags"].includes(type);
+  return ["text", "number", "enum", "tags", "date"].includes(type);
 }
 
 export function parseTags(input: string): string[] {

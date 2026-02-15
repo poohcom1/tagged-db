@@ -5,6 +5,7 @@ import { TextEdit } from "./cellEdit/TextEdit";
 import { NumberEdit } from "./cellEdit/NumberEdit";
 import { EnumEdit } from "./cellEdit/EnumEdit";
 import { TagEdit } from "./cellEdit/TagEdit";
+import { DateEdit } from "./cellEdit/DateEdit";
 
 interface Prop {
   rowId: string;
@@ -57,8 +58,10 @@ export const Cell = React.memo(
               onTagClicked={onTagClicked}
             />
           );
+        case "date":
+          return <DateEdit value={value} onChange={onChanged} />;
       }
-    }, [columnInfo, value, tagSuggestions, rowId, onChanged]);
+    }, [columnInfo, value, onChanged, rowId, tagSuggestions, onTagClicked]);
 
     return <Td>{EditComponent}</Td>;
   },
