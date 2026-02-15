@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { EditButton } from "../../../../components/EditButton";
+import { isTabFocus } from "../../../../utils/tabFocus";
 
 const Container = styled.div`
   display: flex;
@@ -62,7 +63,11 @@ export const NumberEdit = ({ value, onChange }: Props) => {
     <Container ref={containerRef}>
       <div
         tabIndex={0}
-        onFocus={startEdit}
+        onFocus={() => {
+          if (isTabFocus()) {
+            startEdit();
+          }
+        }}
         ref={measureRef}
         style={{
           ...(editing

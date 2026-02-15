@@ -15,6 +15,7 @@ const Container = styled.div`
 const Input = styled(BaseInput)`
   padding: 0;
   min-width: 50px;
+  flex-grow: 1;
 `;
 
 const CustomEditButton = styled(EditButton)`
@@ -66,7 +67,6 @@ export const TextEdit = ({ value, onChange }: Props) => {
             startEdit();
           }
         }}
-        onDoubleClick={startEdit}
         ref={measureRef}
         style={{
           ...(editing

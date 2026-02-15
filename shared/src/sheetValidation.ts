@@ -22,9 +22,9 @@ export function parseTags(input: string): string[] {
   return [...new Set(arr)];
 }
 
-export function cleanTagText(text: string) {
+export function cleanTagText(text: string): string {
   const tags = parseTags(text);
-  return tags.join(", ");
+  return tags.join(", ").trim();
 }
 
 export function validateOptionsReorder(optionsA: string[], optionsB: string[]) {

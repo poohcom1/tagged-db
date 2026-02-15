@@ -95,6 +95,7 @@ export const TagEdit = ({
 
   const commit = () => {
     onChange?.(cleanTagText(input));
+    setInput(cleanTagText(input));
     setEditing(false);
   };
 
@@ -147,6 +148,7 @@ export const TagEdit = ({
               setIndex(0);
             }}
             onKeyDown={(e) => {
+              // Drop down
               if (matches.length > 0) {
                 if (e.key === "ArrowDown") {
                   setIndex((i) => Math.min(i + 1, matches.length - 1));
@@ -164,14 +166,15 @@ export const TagEdit = ({
                     e.preventDefault();
                   }
                 }
-              }
-
-              if (e.key === "Enter ") {
-                commit();
-                e.preventDefault();
-              } else if (e.key === "Escape") {
-                setEditing(false);
-                setInput(value ?? "");
+              } else {
+                // default
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  commit();
+                } else if (e.key === "Escape") {
+                  setEditing(false);
+                  setInput(value ?? "");
+                }
               }
             }}
             onBlur={(e) => {
