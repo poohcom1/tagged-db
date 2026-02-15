@@ -17,22 +17,27 @@ interface Props {
   isOpen: boolean;
   onClose?: () => void;
   containerStyle?: React.CSSProperties;
+  blocking?: boolean;
 }
 
-export const EditModalContainer = ({
+export const ModalContainer = ({
   title,
   children,
   isOpen,
   onClose,
   containerStyle,
+  blocking,
 }: Props) => {
   return (
     <Modal
       isOpen={isOpen}
       onRequestClose={onClose}
+      shouldCloseOnOverlayClick={!blocking}
+      shouldCloseOnEsc={!blocking}
       style={{
         overlay: {
           backgroundColor: "rgba(0, 0, 0, 0.664)",
+          zIndex: 100,
         },
         content: {
           position: "absolute",
