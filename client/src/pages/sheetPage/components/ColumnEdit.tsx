@@ -2,7 +2,7 @@ import { Column, ColumnType, SheetData } from "@app/shared/types/sheet";
 import { createDefaultEnum, validateEnums } from "@app/shared/sheetValidation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
-import { EditModalContainer } from "../../../components/EditModalContainer";
+import { ModalContainer } from "../../../components/ModalContainer";
 import { ColumnEditAction, ColumnEditType } from "@app/shared/types/action";
 
 // Style
@@ -226,11 +226,7 @@ export const ColumnEdit = ({
   }
 
   return (
-    <EditModalContainer
-      title={"Column Settings"}
-      isOpen={isOpen}
-      onClose={onClose}
-    >
+    <ModalContainer title={"Column Settings"} isOpen={isOpen} onClose={onClose}>
       <Container
         onKeyDown={(e) => {
           if (e.key === "Enter") {
@@ -316,7 +312,7 @@ export const ColumnEdit = ({
           </button>
         </ButtonRow>
       </Container>
-    </EditModalContainer>
+    </ModalContainer>
   );
 };
 
