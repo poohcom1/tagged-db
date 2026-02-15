@@ -19,6 +19,7 @@ import { DesktopHeader } from "../../components/desktop/DesktopHeader";
 import { useDraggableWindow } from "../../hooks/useDraggableWindow";
 import { WindowHeader } from "../../components/desktop/WindowHeader";
 import { popupAlert, popupConfirm, popupPrompt } from "../../utils/popup";
+import { sanitizeTitle } from "@app/shared/sheetValidation";
 
 const WINDOW_SIZE_RATIO = 0.8;
 const INITIAL_POSITION_RATIO = (1.0 - WINDOW_SIZE_RATIO) * 0.5;
@@ -278,7 +279,9 @@ export const MySheetsPage = () => {
   }, [fetchSheets]);
 
   const onCreateSheet = useCallback(async () => {
-    const title = await popupPrompt("Enter sheet title", "Create sheet");
+    const title = sanitizeTitle(
+      (await popupPrompt("Enter sheet title", "Create sheet")) ?? "",
+    );
     if (!title) return;
 
     if (sheets?.find((sheet) => sheet.name === title)) {
@@ -314,12 +317,22 @@ export const MySheetsPage = () => {
       popupAlert("Sheet not found");
       return;
     }
-    const title = await popupPrompt(
-      `Enter new sheet title`,
-      "Rename sheet",
-      sheet.name,
+    const title = sanitizeTitle(
+      (await popupPrompt(
+        `Enter new sheet title`,
+        "Rename sheet",
+        sheet.name,
+      )) ?? "",
     );
     if (!title) {
+      return;
+    }
+    if (
+      sheets?.find(
+        (sheet) => sheet.name === title && sheet.id !== selectedSheet,
+      )
+    ) {
+      await popupAlert(`Error: Sheet "${title}" already exists!`);
       return;
     }
     sheet.name = title;
