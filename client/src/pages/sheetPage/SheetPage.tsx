@@ -89,9 +89,15 @@ const VSep = styled.div`
 `;
 
 // - Right column container
-const AddColumnTh = styled.th`
-  background-color: ${COLORS.WHITE};
-  width: ${HEADER_HEIGHT}px;
+const AddColumnTh = styled(Th)`
+  padding: 2px;
+  height: ${HEADER_HEIGHT}px;
+`;
+
+const AddColumnButton = styled(BasicButton)`
+  width: 100%;
+  height: 100%;
+  margin: auto;
   border: 2px dotted #0000006f;
 `;
 
@@ -113,10 +119,6 @@ const AddRowContainer = styled(AddContainer)`
   height: ${HEADER_HEIGHT}px;
 `;
 
-const AddColumnButton = styled(BasicButton)`
-  height: ${HEADER_HEIGHT}px;
-  width: ${HEADER_HEIGHT}px;
-`;
 const AddRowButton = styled(AddColumnButton)`
   height: ${HEADER_HEIGHT}px;
   width: 100%;
