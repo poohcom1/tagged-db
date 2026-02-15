@@ -11,4 +11,6 @@ export const COLORS = {
 
   DARK: "#4e4e4e",
   HEADER: "#000082",
+
+  HEADER_TITLE: "#2e5ca1",
 };
