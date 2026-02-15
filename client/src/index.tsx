@@ -4,8 +4,11 @@ import "./index.css";
 import reportWebVitals from "./reportWebVitals";
 import { PageRoutes } from "./routes";
 import Modal from "react-modal";
+import { setupTabFocusDetection } from "./utils/tabFocus";
 
 Modal.setAppElement("#root");
+
+setupTabFocusDetection();
 
 const root = ReactDOM.createRoot(
   document.getElementById("root") as HTMLElement,

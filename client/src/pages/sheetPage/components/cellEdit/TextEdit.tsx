@@ -59,6 +59,8 @@ export const TextEdit = ({ value, onChange }: Props) => {
   return (
     <Container ref={containerRef}>
       <div
+        tabIndex={0}
+        onFocus={startEdit}
         ref={measureRef}
         style={{
           ...(editing
@@ -111,6 +113,7 @@ export const TextEdit = ({ value, onChange }: Props) => {
         }}
       />
       <CustomEditButton
+        tabIndex={-1}
         ref={saveRef}
         onClick={() => {
           if (!editing) {

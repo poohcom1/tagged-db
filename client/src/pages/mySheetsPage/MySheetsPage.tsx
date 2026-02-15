@@ -3,7 +3,7 @@ import styled from "styled-components";
 import { FaFileCsv } from "react-icons/fa6";
 import { PiFoldersLight } from "react-icons/pi";
 import { BasicButton } from "../../components/BasicButton";
-import { useUserRemotes } from "../../storageBackends/useUserRemotes";
+import { useUserRemotes } from "../../hooks/useUserRemotes";
 import { IoMdClose, IoMdAdd } from "react-icons/io";
 import { PiNetworkBold as IconLocal } from "react-icons/pi";
 import {
@@ -11,7 +11,7 @@ import {
   TbNetworkOff as IconNetworkOff,
   TbHourglass as IconProgress,
 } from "react-icons/tb";
-import { useStorageBackend } from "../../storageBackends/useBackend";
+import { useStorageBackend } from "../../hooks/useBackend";
 import { localStorageBackend } from "../../storageBackends/localStorageBackend";
 import { COLORS } from "../../styles/colors";
 import { border } from "../../styles/mixins";
@@ -180,7 +180,7 @@ const File = styled.a<FileProps>`
   &:hover {
     border: 1px solid #00000033;
     text-decoration: ${({ $selected }) =>
-    $selected ? "underline" : "inherit"};
+      $selected ? "underline" : "inherit"};
     cursor: pointer;
   }
 
@@ -221,9 +221,9 @@ export const MySheetsPage = () => {
           typeof window === "undefined"
             ? INITIAL_POSITION_FALLBACK
             : Math.max(
-              34,
-              Math.round(window.innerHeight * INITIAL_POSITION_RATIO),
-            ),
+                34,
+                Math.round(window.innerHeight * INITIAL_POSITION_RATIO),
+              ),
       },
       minTop: 34,
     });
