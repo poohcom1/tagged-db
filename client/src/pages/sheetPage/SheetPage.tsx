@@ -587,6 +587,7 @@ export const SheetPage = () => {
                       rowId={row.id}
                       key={column.id}
                       value={row.values[column.id]}
+                      sheetData={sheetData}
                       columnInfo={column}
                       onCellUpdate={onUpdateCell}
                       tagSuggestions={sheetData.tagCache[column.id]}
