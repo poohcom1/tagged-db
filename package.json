@@ -15,9 +15,11 @@
     "build:client": "npm run build --workspace shared && npm run build --workspace client",
     "build:server": "npm run build --workspace shared && npm run build --workspace server",
     "build:shared": "npm run build --workspace shared",
-    "start:server": "npm run start --workspace server"
+    "start:server": "npm run start --workspace server",
+    "test:shared": "npm run test --workspace shared"
   },
   "devDependencies": {
-    "concurrently": "^9.2.1"
+    "concurrently": "^9.2.1",
+    "prettier": "^3.8.1"
   }
 }
