@@ -426,7 +426,7 @@ export const MySheetsPage = () => {
         }}
       >
         <WindowHeader isDragging={isDragging} dragHandleProps={dragHandleProps}>
-          <PiFoldersLight /> My Sheets{" "}
+          <PiFoldersLight style={{ width: "16px", height: "16px" }} /> My Sheets
         </WindowHeader>
         <ButtonContainer>
           <MenuButton

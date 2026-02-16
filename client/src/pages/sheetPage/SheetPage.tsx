@@ -489,7 +489,7 @@ export const SheetPage = () => {
           isDragging={isDragging}
           dragHandleProps={dragHandleProps}
         >
-          <FaFileCsv style={{ fontFamily: "initial", margin: "auto 0" }} />
+          <FaFileCsv style={{ width: "16px", height: "16px" }} />
           {sheetData.name}.csv
           {storageBackend.backendType === "api" && (
             <div

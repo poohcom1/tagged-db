@@ -11,7 +11,7 @@ const Header = styled.div<{ $dragEnable: boolean; $dragging: boolean }>`
   margin-bottom: 4px;
 
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 8px;
   cursor: ${({ $dragEnable, $dragging }) =>
     $dragEnable ? ($dragging ? "grabbing" : "grab") : "inherit"};

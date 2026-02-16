@@ -10,6 +10,7 @@ export type PopupInfo =
       message: string;
       title?: string;
       defaultPrompt?: string;
+      password?: boolean;
     };
 type PopupResponse =
   | {
@@ -53,8 +54,9 @@ export const popupPrompt = async (
   message: string,
   title?: string,
   defaultPrompt?: string,
+  password: boolean = false,
 ): Promise<string | null> => {
-  setPopupAlert({ type: "prompt", message, defaultPrompt, title });
+  setPopupAlert({ type: "prompt", message, defaultPrompt, title, password });
   await new Promise((resolve) => setTimeout(resolve, DELAY_PADDING));
   const response = await new Promise<PopupResponse>((resolve) => {
     currentDoneCallback = resolve;
