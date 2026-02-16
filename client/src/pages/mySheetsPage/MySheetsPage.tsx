@@ -56,6 +56,7 @@ const FolderContainer = styled.div`
   ${border({})}
   display: flex;
   flex-direction: column;
+  outline: none;
 `;
 
 const ButtonContainer = styled.div`
