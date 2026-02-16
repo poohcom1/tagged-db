@@ -14,6 +14,7 @@ import styled from "styled-components";
 import { ModalContainer } from "../../../components/ModalContainer";
 import { ColumnEditAction, ColumnEditType } from "@app/shared/types/action";
 import { popupAlert, popupConfirm } from "../../../utils/popup";
+import { errorToString } from "@app/shared/util";
 
 // Style
 const Container = styled.div`
@@ -53,6 +54,8 @@ interface Prop {
   onDelete?: () => void;
 }
 
+type Actions = Partial<Record<ColumnEditType, ColumnEditAction | undefined>>;
+
 export const ColumnEdit = ({
   columnId,
   sheetData,
@@ -65,7 +68,7 @@ export const ColumnEdit = ({
     sheetData.columns.find((c) => c.id === columnId),
   );
 
-  const actions = useRef<Partial<Record<ColumnEditType, ColumnEditAction>>>({});
+  const actions = useRef<Actions>({});
   const currentColumnId = useRef<string | null>(null);
 
   useEffect(() => {
@@ -77,19 +80,25 @@ export const ColumnEdit = ({
   }, [column, columnId, sheetData.columns]);
 
   const onCommitAction = useCallback(async () => {
-    if (!column) return;
+    try {
+      if (!column) return;
 
-    const actionArr: ColumnEditAction[] = [];
-    for (const action of Object.values(actions.current)) {
-      const validate = validateColumnAction(action);
-      if (!validate.ok) {
-        await popupAlert(validate.error);
-        return;
+      const actionArr: ColumnEditAction[] = [];
+      for (const key in actions.current) {
+        const action = actions.current[key as ColumnEditType];
+        if (!action) continue;
+        const validate = validateColumnAction(action);
+        if (!validate.ok) {
+          await popupAlert(validate.error);
+          return;
+        }
+        actionArr.push(action);
       }
-      actionArr.push(action);
+      onSubmit?.(actionArr);
+      actions.current = {};
+    } catch (e) {
+      popupAlert(errorToString(e));
     }
-    onSubmit?.(actionArr);
-    actions.current = {};
   }, [column, onSubmit]);
 
   if (!columnId) {
@@ -233,7 +242,7 @@ const EditRow = ({ label, children }: EditRowProps) => {
 // Sub Components - Advanced Edits
 const EnumAdvancedEdit = (props: {
   column: EnumColumn;
-  actions: RefObject<Record<string, ColumnEditAction>>;
+  actions: RefObject<Actions>;
 }) => {
   const { column, actions } = props;
   // Enum States
@@ -360,7 +369,7 @@ const EnumAdvancedEdit = (props: {
 const TagsAdvancedEdit = (props: {
   sheetData: SheetData;
   column: TagsColumn;
-  actions: RefObject<Partial<Record<ColumnEditType, ColumnEditAction>>>;
+  actions: RefObject<Actions>;
 }) => {
   const { sheetData, column, actions } = props;
 
