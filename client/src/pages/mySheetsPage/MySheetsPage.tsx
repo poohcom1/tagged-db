@@ -395,36 +395,34 @@ export const MySheetsPage = () => {
   }, [getUrl, selectedSheet]);
 
   useEffect(() => {
-    document.title = "My Sheets | MyTaggedDB";
-
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey) {
-        return;
-      }
-
-      if (e.key === "Escape") {
-        setSelectedSheet("");
-      } else if (e.key === "n") {
-        onCreateSheet();
-      } else if (e.key === "r") {
-        onRenameSheet();
-      } else if (e.key === "d") {
-        onDeleteSheet();
-      } else if (e.key === "o") {
-        onOpenSheet();
-      }
-    };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [onCreateSheet, onDeleteSheet, onOpenSheet, onRenameSheet]);
+    containerRef.current?.focus();
+  }, [containerRef]);
 
   return (
     <Background onClick={() => setSelectedSheet("")}>
       <DesktopHeader />
       <FolderContainer
+        tabIndex={-1}
         ref={containerRef}
         style={windowStyle}
         onClick={(event) => event.stopPropagation()}
+        onKeyUp={(e) => {
+          if (e.ctrlKey) {
+            return;
+          }
+
+          if (e.key === "Escape") {
+            setSelectedSheet("");
+          } else if (e.key === "n") {
+            onCreateSheet();
+          } else if (e.key === "r") {
+            onRenameSheet();
+          } else if (e.key === "d") {
+            onDeleteSheet();
+          } else if (e.key === "o") {
+            onOpenSheet();
+          }
+        }}
       >
         <WindowHeader isDragging={isDragging} dragHandleProps={dragHandleProps}>
           <PiFoldersLight /> My Sheets{" "}
