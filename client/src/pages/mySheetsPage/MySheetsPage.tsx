@@ -20,6 +20,7 @@ import { useDraggableWindow } from "../../hooks/useDraggableWindow";
 import { WindowHeader } from "../../components/desktop/WindowHeader";
 import { popupAlert, popupConfirm, popupPrompt } from "../../utils/popup";
 import { sanitizeTitle } from "@app/shared/sheetValidation";
+import { handshake } from "../../storageBackends/apiBackend";
 
 const WINDOW_SIZE_RATIO = 0.8;
 const INITIAL_POSITION_RATIO = (1.0 - WINDOW_SIZE_RATIO) * 0.5;
@@ -521,10 +522,17 @@ export const MySheetsPage = () => {
                   url = url.slice(0, -1);
                 }
 
-                userRemotes.addRemote({
-                  url,
-                });
-                setUseRemoteBackend(url);
+                const res = await handshake(url);
+                if (!res.ok) {
+                  await popupAlert(
+                    "Could not connect to remote backend: " + res.error,
+                  );
+                } else {
+                  userRemotes.addRemote({
+                    url,
+                  });
+                  setUseRemoteBackend(url);
+                }
               } else {
                 if (url) {
                   await popupAlert("Invalid URL: " + url);
