@@ -9,6 +9,7 @@ import {
   Endpoint,
   GET_SHEET_DATA,
   GET_SHEETS,
+  HANDSHAKE,
   LOGIN,
   ParamsOf,
   RENAME_SHEET,
@@ -116,6 +117,22 @@ export const apiBackend = (baseUrl: string): StorageBackend => ({
     });
   },
 });
+
+// Handshake
+export async function handshake(baseUrl: string): Promise<Result<boolean>> {
+  try {
+    const res = await fetchEndpoint(baseUrl, HANDSHAKE, undefined, undefined);
+
+    if (res.status === 200) {
+      return Ok(true);
+    } else if (res.status === 401) {
+      return Ok(false);
+    }
+    return Err("Unknown status code");
+  } catch (e) {
+    return Err(handleErrorObject(e));
+  }
+}
 
 // On close
 let activeRequests = 0;

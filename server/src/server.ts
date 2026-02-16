@@ -6,6 +6,7 @@ import {
   DELETE_SHEET,
   GET_SHEETS,
   GET_SHEET_DATA,
+  HANDSHAKE,
   LOGIN,
   RENAME_SHEET,
   UPDATE_SHEET,
@@ -122,10 +123,13 @@ if (
     });
   }
 
-  // Declare a route
-  server.get("/api/ping", async function handler(request, reply) {
-    return "pong";
-  });
+  // Handshake
+  server[HANDSHAKE.method]<EndpointOf<typeof HANDSHAKE>>(
+    HANDSHAKE.url,
+    async function handler(request, reply) {
+      return "ok";
+    },
+  );
 
   // API
   const db = jsonFsDb;

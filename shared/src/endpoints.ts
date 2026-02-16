@@ -1,7 +1,11 @@
 import { SheetAction } from "./types/action.js";
 import { SheetData, SheetMeta } from "./types/sheet.js";
 
-type LoginType = "passkey" | "user"; // user is not implemented currently
+export const HANDSHAKE: Endpoint<undefined, undefined, string> = {
+  url: "/api/handshake",
+  method: "get",
+};
+
 type LoginBody =
   | { accessType: "passkey"; passkey: string }
   | { accessType: "user"; username: string; password: string };
