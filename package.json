@@ -16,7 +16,9 @@
     "build:server": "npm run build --workspace shared && npm run build --workspace server",
     "build:shared": "npm run build --workspace shared",
     "start:server": "npm run start --workspace server",
-    "test:shared": "npm run test --workspace shared"
+    "test:shared": "npm run test --workspace shared",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",
