@@ -1,3 +1,4 @@
+import { ColumnEditAction, SheetAction } from "./types/action.js";
 import { Err, Ok, Result } from "./types/result.js";
 import { ColumnType } from "./types/sheet.js";
 
@@ -27,14 +28,7 @@ export function cleanTagText(text: string): string {
   return tags.join(", ").trim();
 }
 
-export function validateOptionsReorder(optionsA: string[], optionsB: string[]) {
-  return (
-    optionsA.length === optionsB.length &&
-    optionsA.every((o, i) => o === optionsB[i])
-  );
-}
-
-export function validateEnums(options: string[]): Result<void> {
+function validateEnums(options: string[]): Result<void> {
   // check all unique
   const unique = new Set(options);
   if (unique.size !== options.length) {
@@ -42,6 +36,18 @@ export function validateEnums(options: string[]): Result<void> {
   }
   if (options.some((o) => o === "")) {
     return Err("Options cannot be empty strings.");
+  }
+  return Ok();
+}
+
+export function validateColumnAction(action: ColumnEditAction): Result<void> {
+  switch (action.editType) {
+    case "enum_update":
+      const options = action.idOrder.map((o) => action.idToNames[o] || "");
+      return validateEnums(options);
+    case "tag_rename":
+      const tags = Object.values(action.tagMap);
+      return validateEnums(tags);
   }
   return Ok();
 }
