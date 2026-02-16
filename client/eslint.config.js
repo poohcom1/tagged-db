@@ -1,7 +1,7 @@
-import { defineConfig } from 'eslint/config';
-import eslint from '@eslint/js';
-import reactHooks from 'eslint-plugin-react-hooks';
-import tseslint from 'typescript-eslint';
+import { defineConfig } from "eslint/config";
+import eslint from "@eslint/js";
+import reactHooks from "eslint-plugin-react-hooks";
+import tseslint from "typescript-eslint";
 
 export default defineConfig(
   eslint.configs.recommended,
@@ -11,7 +11,7 @@ export default defineConfig(
       "react-hooks": reactHooks,
     },
     rules: {
-      'react-hooks/exhaustive-deps': 'warn', // or 'error'
+      "react-hooks/exhaustive-deps": "warn", // or 'error'
     },
-  }
+  },
 );
