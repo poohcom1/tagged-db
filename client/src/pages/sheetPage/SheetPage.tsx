@@ -71,6 +71,7 @@ const VContainer = styled.div`
   flex: 1 1 auto;
   min-height: 0;
   min-width: 0;
+  position: relative;
   overflow: auto;
 
   border-top: 2px solid grey;

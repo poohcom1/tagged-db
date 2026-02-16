@@ -16,7 +16,7 @@ const CustomEditButton = styled(EditButton)`
 `;
 
 const Dropdown = styled.div`
-  position: fixed;
+  position: absolute;
 
   background: white;
   border: 1px solid #ccc;
@@ -192,7 +192,7 @@ export const TagEdit = ({
           {editing ? "Save" : "Edit"}
         </CustomEditButton>
       </Container>
-      {matches.length > 0 && (
+      {editing && matches.length > 0 && (
         <Dropdown>
           {matches.map((tag, i) => (
             <Item
