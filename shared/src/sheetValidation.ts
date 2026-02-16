@@ -1,4 +1,4 @@
-import { ColumnEditAction, SheetAction } from "./types/action.js";
+import { ColumnEditAction } from "./types/action.js";
 import { Err, Ok, Result } from "./types/result.js";
 import { ColumnType } from "./types/sheet.js";
 

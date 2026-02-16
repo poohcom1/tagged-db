@@ -24,5 +24,6 @@
     "rootDir": "src",
     "outDir": "dist"
   },
-  "include": ["src"]
+  "include": ["src", "test/sheetValidation.test.ts"],
+  "exclude": ["node_modules", "**/*.spec.ts", "**/*.test.ts", "**/__tests__"]
 }
