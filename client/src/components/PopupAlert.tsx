@@ -117,7 +117,7 @@ export const PopupAlert = () => {
             <input
               style={{ flexGrow: 1 }}
               autoFocus
-              type="text"
+              type={currentAlert.password ? "password" : "text"}
               value={promptValue}
               onChange={(e) => setPromptValue(e.target.value)}
             />

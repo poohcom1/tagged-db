@@ -186,7 +186,8 @@ async function fetchEndpoint<E extends Endpoint<unknown, unknown, unknown>>(
 
     let res = await fetchFunc();
     if (res.status === 401) {
-      const user = (await popupPrompt(`Input remote passkey`, "Login")) || "";
+      const user =
+        (await popupPrompt(`Input remote passkey`, "Login", "", true)) || "";
 
       const loginBody: BodyOf<typeof LOGIN> = {
         accessType: "passkey",
