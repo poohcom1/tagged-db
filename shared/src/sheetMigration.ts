@@ -207,6 +207,20 @@ function updateColumn(
       columns.splice(columns.indexOf(column), 1);
       columns.splice(payload.toIndex, 0, column);
       break;
+    case "tag_rename":
+      if (column.type !== "tags") {
+        return Err("Column is not a tags column");
+      }
+
+      for (const row of sheetData.rows) {
+        const tagString = row.values[columnId] ?? "";
+        const tags = parseTags(tagString);
+        row.values[columnId] = tags
+          .map((tag) => payload.tagMap[tag] ?? tag)
+          .join(", ");
+      }
+
+      sheetData.tagCache = updateTagCache(sheetData);
   }
 
   return Ok({ ...sheetData, columns });

@@ -49,13 +49,15 @@ export type ColumnEditType =
   | "rename"
   | "change_type"
   | "enum_update"
-  | "reorder";
+  | "reorder"
+  | "tag_rename";
 
 export type ColumnEditAction =
   | ColumnRenameAction
   | ColumnChangeTypeAction
   | ColumnEnumUpdateAction
-  | ColumnReorderAction;
+  | ColumnReorderAction
+  | ColumnTagRenameAction;
 
 interface BaseColumnAction {
   editType: ColumnEditType;
@@ -76,6 +78,11 @@ interface ColumnEnumUpdateAction extends BaseColumnAction {
   // ID = original values
   idOrder: string[];
   idToNames: Record<string, string>;
+}
+
+interface ColumnTagRenameAction extends BaseColumnAction {
+  editType: "tag_rename";
+  tagMap: Record<string, string>; // oldName -> newName
 }
 
 interface ColumnReorderAction extends BaseColumnAction {

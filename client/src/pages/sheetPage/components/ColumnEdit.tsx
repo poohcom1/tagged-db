@@ -1,6 +1,15 @@
-import { Column, ColumnType, SheetData } from "@app/shared/types/sheet";
-import { createDefaultEnum, validateEnums } from "@app/shared/sheetValidation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  Column,
+  ColumnType,
+  EnumColumn,
+  SheetData,
+  TagsColumn,
+} from "@app/shared/types/sheet";
+import {
+  createDefaultEnum,
+  validateColumnAction,
+} from "@app/shared/sheetValidation";
+import { RefObject, useCallback, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { ModalContainer } from "../../../components/ModalContainer";
 import { ColumnEditAction, ColumnEditType } from "@app/shared/types/action";
@@ -59,38 +68,11 @@ export const ColumnEdit = ({
   const actions = useRef<Partial<Record<ColumnEditType, ColumnEditAction>>>({});
   const currentColumnId = useRef<string | null>(null);
 
-  // Enum States
-  const [enumState, setEnumState] = useState<{
-    idOrder: string[];
-    idToNames: Record<string, string>;
-  }>({ idOrder: [], idToNames: {} });
-
-  // Autoselect latest enum field
-  const inputFieldsRef = useRef<HTMLInputElement[]>([]);
-  const previousEnumCount = useRef(0);
-
-  useEffect(() => {
-    if (
-      column?.type === "enum" &&
-      inputFieldsRef.current.length > previousEnumCount.current
-    ) {
-      inputFieldsRef.current[inputFieldsRef.current.length - 1].select();
-    }
-    previousEnumCount.current = inputFieldsRef.current.length;
-  }, [column?.type, enumState]);
-
   useEffect(() => {
     if (columnId !== currentColumnId.current) {
       currentColumnId.current = columnId;
       setColumn(sheetData.columns.find((c) => c.id === columnId));
       actions.current = {};
-      if (column && "options" in column) {
-        const enumIdMap: Record<string, string> = {};
-        for (const option of column.options ?? []) {
-          enumIdMap[option] = option;
-        }
-        setEnumState({ idOrder: column?.options || [], idToNames: enumIdMap });
-      }
     }
   }, [column, columnId, sheetData.columns]);
 
@@ -99,124 +81,16 @@ export const ColumnEdit = ({
 
     const actionArr: ColumnEditAction[] = [];
     for (const action of Object.values(actions.current)) {
-      actionArr.push(action);
-    }
-    if (column.type === "enum") {
-      const res = validateEnums(
-        enumState.idOrder.map((o) => enumState.idToNames[o]),
-      );
-      if (!res.ok) {
-        await popupAlert(res.error);
+      const validate = validateColumnAction(action);
+      if (!validate.ok) {
+        await popupAlert(validate.error);
         return;
       }
-      actionArr.push({
-        editType: "enum_update",
-        ...enumState,
-      });
-      console.log(actionArr[actionArr.length - 1]);
+      actionArr.push(action);
     }
     onSubmit?.(actionArr);
     actions.current = {};
-  }, [column, enumState, onSubmit]);
-
-  let AdvancedEdit = null;
-  switch (column?.type) {
-    case "text":
-      break;
-    case "number":
-      AdvancedEdit = null;
-      break;
-    case "enum": {
-      const onEnumRenamed = (id: string, name: string) =>
-        setEnumState((o) => ({
-          ...o,
-          idToNames: { ...o.idToNames, [id]: name },
-        }));
-      const onEnumMovedUp = (index: number) =>
-        setEnumState((o) => {
-          const copy = [...o.idOrder];
-          [copy[index - 1], copy[index]] = [copy[index], copy[index - 1]];
-          return { ...o, idOrder: copy };
-        });
-      const onEnumMovedDown = (index: number) =>
-        setEnumState((o) => {
-          const copy = [...o.idOrder];
-          [copy[index + 1], copy[index]] = [copy[index], copy[index + 1]];
-          return { ...o, idOrder: copy };
-        });
-      const onEnumDeleted = (id: string) =>
-        setEnumState((o) => {
-          const updatedOrder = o.idOrder.filter((i) => i !== id);
-          const updatedMap = { ...o.idToNames };
-          delete updatedMap[id];
-          return {
-            idOrder: updatedOrder,
-            idToNames: updatedMap,
-          };
-        });
-      const onEnumAdded = () => {
-        setEnumState((o) => {
-          const newName = createDefaultEnum(
-            o.idOrder.map((e) => o.idToNames[e]),
-          );
-          const id = crypto.randomUUID();
-          return {
-            idOrder: [...o.idOrder, id],
-            idToNames: {
-              ...o.idToNames,
-              [id]: newName,
-            },
-          };
-        });
-      };
-      AdvancedEdit = (
-        <>
-          {enumState.idOrder.map((id, index) => (
-            <EditRow key={index} label={`Option ${index + 1}`}>
-              <div
-                style={{
-                  display: "flex",
-                  gap: 4,
-                }}
-              >
-                <input
-                  ref={(ref) => {
-                    if (ref) inputFieldsRef.current[index] = ref;
-                  }}
-                  type="text"
-                  value={enumState.idToNames[id]}
-                  onChange={(e) => onEnumRenamed(id, e.target.value)}
-                />
-                <button
-                  type="button"
-                  disabled={index === 0}
-                  onClick={() => onEnumMovedUp(index)}
-                >
-                  ↑
-                </button>
-                <button
-                  type="button"
-                  disabled={index === enumState.idOrder.length - 1}
-                  onClick={() => onEnumMovedDown(index)}
-                >
-                  ↓
-                </button>
-                <button type="button" onClick={() => onEnumDeleted(id)}>
-                  ×
-                </button>
-              </div>
-            </EditRow>
-          ))}
-          <EditRow label="">
-            <button type="button" onClick={() => onEnumAdded()}>
-              + Add option
-            </button>
-          </EditRow>
-        </>
-      );
-      break;
-    }
-  }
+  }, [column, onSubmit]);
 
   if (!columnId) {
     return null;
@@ -224,6 +98,25 @@ export const ColumnEdit = ({
 
   if (!column) {
     return null;
+  }
+
+  let advancedEditEl = null;
+  switch (column.type) {
+    case "enum":
+      advancedEditEl = <EnumAdvancedEdit column={column} actions={actions} />;
+      break;
+    case "tags":
+      advancedEditEl = (
+        <TagsAdvancedEdit
+          sheetData={sheetData}
+          column={column}
+          actions={actions}
+        />
+      );
+      break;
+    default:
+      advancedEditEl = null;
+      break;
   }
 
   return (
@@ -284,7 +177,7 @@ export const ColumnEdit = ({
             </EditRow>
           </tbody>
         </EditTable>
-        {AdvancedEdit && <hr style={{ opacity: "50%" }} />}
+        {advancedEditEl && <hr style={{ opacity: "50%" }} />}
         <div
           style={{
             maxHeight: "50vh",
@@ -292,7 +185,7 @@ export const ColumnEdit = ({
           }}
         >
           <EditTable>
-            <tbody>{AdvancedEdit}</tbody>
+            <tbody>{advancedEditEl}</tbody>
           </EditTable>
         </div>
         <ButtonRow>
@@ -317,6 +210,7 @@ export const ColumnEdit = ({
   );
 };
 
+// Sub Components
 interface EditRowProps {
   children?: React.ReactNode;
   label: string;
@@ -333,5 +227,197 @@ const EditRow = ({ label, children }: EditRowProps) => {
       <TdLabel>{label}</TdLabel>
       <Td>{children}</Td>
     </tr>
+  );
+};
+
+// Sub Components - Advanced Edits
+const EnumAdvancedEdit = (props: {
+  column: EnumColumn;
+  actions: RefObject<Record<string, ColumnEditAction>>;
+}) => {
+  const { column, actions } = props;
+  // Enum States
+  const [enumState, setEnumState] = useState<{
+    idOrder: string[];
+    idToNames: Record<string, string>;
+  }>({ idOrder: [], idToNames: {} });
+
+  useEffect(() => {
+    actions.current["enum_update"] = {
+      editType: "enum_update",
+      idOrder: enumState.idOrder,
+      idToNames: enumState.idToNames,
+    };
+  }, [actions, enumState]);
+
+  useEffect(() => {
+    const enumIdMap: Record<string, string> = {};
+    for (const option of column.options ?? []) {
+      enumIdMap[option] = option;
+    }
+    setEnumState({ idOrder: column?.options || [], idToNames: enumIdMap });
+  }, [column]);
+
+  // Autoselect latest enum field
+  const inputFieldsRef = useRef<HTMLInputElement[]>([]);
+  const previousEnumCount = useRef(0);
+
+  useEffect(() => {
+    if (inputFieldsRef.current.length > previousEnumCount.current) {
+      inputFieldsRef.current[inputFieldsRef.current.length - 1].select();
+    }
+    previousEnumCount.current = inputFieldsRef.current.length;
+  }, [column.type, enumState]);
+
+  // Callbacks
+  const onEnumRenamed = (id: string, name: string) =>
+    setEnumState((o) => ({
+      ...o,
+      idToNames: { ...o.idToNames, [id]: name },
+    }));
+  const onEnumMovedUp = (index: number) =>
+    setEnumState((o) => {
+      const copy = [...o.idOrder];
+      [copy[index - 1], copy[index]] = [copy[index], copy[index - 1]];
+      return { ...o, idOrder: copy };
+    });
+  const onEnumMovedDown = (index: number) =>
+    setEnumState((o) => {
+      const copy = [...o.idOrder];
+      [copy[index + 1], copy[index]] = [copy[index], copy[index + 1]];
+      return { ...o, idOrder: copy };
+    });
+  const onEnumDeleted = (id: string) =>
+    setEnumState((o) => {
+      const updatedOrder = o.idOrder.filter((i) => i !== id);
+      const updatedMap = { ...o.idToNames };
+      delete updatedMap[id];
+      return {
+        idOrder: updatedOrder,
+        idToNames: updatedMap,
+      };
+    });
+  const onEnumAdded = () => {
+    setEnumState((o) => {
+      const newName = createDefaultEnum(o.idOrder.map((e) => o.idToNames[e]));
+      const id = crypto.randomUUID();
+      return {
+        idOrder: [...o.idOrder, id],
+        idToNames: {
+          ...o.idToNames,
+          [id]: newName,
+        },
+      };
+    });
+  };
+  return (
+    <>
+      {enumState.idOrder.map((id, index) => (
+        <EditRow key={index} label={`Option ${index + 1}`}>
+          <div
+            style={{
+              display: "flex",
+              gap: 4,
+            }}
+          >
+            <input
+              ref={(ref) => {
+                if (ref) inputFieldsRef.current[index] = ref;
+              }}
+              type="text"
+              value={enumState.idToNames[id]}
+              onChange={(e) => onEnumRenamed(id, e.target.value)}
+            />
+            <button
+              type="button"
+              disabled={index === 0}
+              onClick={() => onEnumMovedUp(index)}
+            >
+              ↑
+            </button>
+            <button
+              type="button"
+              disabled={index === enumState.idOrder.length - 1}
+              onClick={() => onEnumMovedDown(index)}
+            >
+              ↓
+            </button>
+            <button type="button" onClick={() => onEnumDeleted(id)}>
+              ×
+            </button>
+          </div>
+        </EditRow>
+      ))}
+      <EditRow label="">
+        <button type="button" onClick={() => onEnumAdded()}>
+          + Add option
+        </button>
+      </EditRow>
+    </>
+  );
+};
+
+const TagsAdvancedEdit = (props: {
+  sheetData: SheetData;
+  column: TagsColumn;
+  actions: RefObject<Partial<Record<ColumnEditType, ColumnEditAction>>>;
+}) => {
+  const { sheetData, column, actions } = props;
+
+  const [currentTags, setCurrentTags] = useState<string[]>([]);
+
+  useEffect(() => {
+    setCurrentTags(sheetData.tagCache[column.id] ?? []);
+  }, [sheetData.tagCache, column.id]);
+
+  useEffect(() => {
+    const cachedTags = sheetData.tagCache[column.id];
+    if (!cachedTags) {
+      actions.current["tag_rename"] = undefined;
+      return;
+    }
+
+    const renameMap: Record<string, string> = {};
+    for (let i = 0; i < cachedTags.length; i++) {
+      if (cachedTags[i] === currentTags[i]) continue;
+      renameMap[cachedTags[i]] = currentTags[i];
+    }
+
+    if (Object.keys(renameMap).length === 0) {
+      actions.current["tag_rename"] = undefined;
+      return;
+    }
+    actions.current["tag_rename"] = {
+      editType: "tag_rename",
+      tagMap: renameMap,
+    };
+  }, [actions, column.id, currentTags, sheetData.tagCache]);
+
+  return (
+    <>
+      {currentTags.map((tag, index) => (
+        <EditRow key={index} label={`Tag ${index + 1}`}>
+          <div
+            style={{
+              display: "flex",
+              gap: 4,
+            }}
+          >
+            <input
+              type="text"
+              value={tag}
+              placeholder={sheetData.tagCache[column.id]?.[index] ?? ""}
+              onChange={(e) =>
+                setCurrentTags((tags) => {
+                  const copy = [...tags];
+                  copy[index] = e.target.value;
+                  return copy;
+                })
+              }
+            />
+          </div>
+        </EditRow>
+      ))}
+    </>
   );
 };

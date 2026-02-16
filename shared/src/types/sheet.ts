@@ -12,7 +12,7 @@ export interface SheetMeta {
 export interface SheetData extends SheetMeta {
   rows: Row[];
   columns: Column[];
-  tagCache: Record<ColumnId, string[]>;
+  tagCache: Record<ColumnId, string[] | undefined>;
 }
 
 export type ColumnType = "text" | "number" | "enum" | "tags" | "date";
@@ -44,12 +44,12 @@ interface NumberColumn extends BaseColumn {
   step?: number;
 }
 
-interface EnumColumn extends BaseColumn {
+export interface EnumColumn extends BaseColumn {
   type: "enum";
   options?: string[];
 }
 
-interface TagsColumn extends BaseColumn {
+export interface TagsColumn extends BaseColumn {
   type: "tags";
 }
 
