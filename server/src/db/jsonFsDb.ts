@@ -13,23 +13,35 @@ async function getSheetFile(fileName: string): Promise<SheetData> {
   const data = await fs.readFile(path.join(DATA_DIR, fileName), "utf-8");
   return JSON.parse(data) as SheetData;
 }
-
 async function saveSheetFile(fileName: string, data: SheetData): Promise<void> {
   await fs.writeFile(
     path.join(DATA_DIR, fileName),
     JSON.stringify(data, null, 2),
   );
 }
+async function sheetExists(fileName: string): Promise<boolean> {
+  try {
+    await fs.access(path.join(DATA_DIR, fileName));
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
 
 export const jsonFsDb: DBInterface = {
-  getSheets: async function (): Promise<SheetData[]> {
+  getSheets: async function (): Promise<SheetMeta[]> {
     const files = await readdir(DATA_DIR);
     const sheets = await Promise.all(
       files
         .filter((f) => f.endsWith(".json"))
         .map(async (f) => await getSheetFile(f)),
     );
-    return sheets;
+    return sheets.map((sheet) => ({
+      id: sheet.id,
+      name: sheet.name,
+      created: sheet.created,
+      updated: sheet.updated,
+    }));
   },
   createSheet: async function (title: string): Promise<SheetMeta> {
     const id = crypto.randomUUID();
@@ -58,5 +70,14 @@ export const jsonFsDb: DBInterface = {
       throw new SheetError(res.error);
     }
     await saveSheetFile(`${id}.json`, res.value);
+  },
+  importSheet: async function (sheetData) {
+    // Check if sheet already exists
+    const exists = await sheetExists(`${sheetData.id}.json`);
+    if (exists) {
+      throw new SheetError(`Sheet with id: ${sheetData.id} already exists`);
+    }
+
+    await saveSheetFile(`${sheetData.id}.json`, sheetData);
   },
 };

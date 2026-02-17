@@ -545,7 +545,6 @@ export const SheetPage = () => {
                       }}
                       title={column.title}
                       onEdit={() => {
-                        console.log("column edit: " + column.id);
                         setCurrentEditColumnId(column.id);
                       }}
                       index={ind}
