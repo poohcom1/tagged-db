@@ -29,6 +29,12 @@ import { useDraggableWindow } from "../../hooks/useDraggableWindow";
 import { WindowHeader } from "../../components/desktop/WindowHeader";
 import { FaFileCsv } from "react-icons/fa6";
 import { popupAlert, popupConfirm } from "../../utils/popup";
+import {
+  ComputedSheet,
+  computeSheetValues,
+  injectComputedValues,
+  RowWithComputed,
+} from "../../utils/formulaComputation";
 
 const MAX_HEIGHT_OFFSET = 40;
 const DEFAULT_POSITION = { x: 48, y: 52 };
@@ -126,7 +132,6 @@ const AddRowButton = styled(AddColumnButton)`
 `;
 
 // Component Page
-
 interface SortKey {
   columnId: string;
   ascOrder: boolean;
@@ -148,6 +153,7 @@ export const SheetPage = () => {
   const initialPositionResolvedRef = useRef(false);
   const sheetId = useParams<{ id: string }>().id ?? "";
   const [sheetData, setSheetData] = useState<SheetData | null>(null);
+  const [computedCells, setComputedCells] = useState<ComputedSheet>({});
   const [isWindowReady, setIsWindowReady] = useState(false);
   const [currentEditColumnId, setCurrentEditColumnId] = useState<string | null>(
     null,
@@ -176,9 +182,18 @@ export const SheetPage = () => {
     }
   }, [sheetId, storageBackend]);
 
+  // Initial load
   useEffect(() => {
     loadSheet();
   }, [loadSheet]);
+
+  // Computed cells
+  useEffect(() => {
+    if (!sheetData) {
+      return;
+    }
+    computeSheetValues(sheetData).then(setComputedCells);
+  }, [sheetData]);
 
   const onUpdateCell = useCallback(
     async (rowId: string, column: Column, value: ColumnValue) => {
@@ -210,11 +225,14 @@ export const SheetPage = () => {
     [loadSheet, sheetData, sheetId, storageBackend],
   );
 
-  const rows = useMemo(() => {
+  const rows: RowWithComputed[] = useMemo(() => {
     if (!sheetData) return [];
 
-    const sheet = [...sheetData.rows];
-    sheet.sort((a, b) => {
+    const rows: RowWithComputed[] = injectComputedValues(
+      sheetData.rows,
+      computedCells,
+    );
+    rows.sort((a, b) => {
       if (!sortby) return 0;
       const aVal = a.values[sortby.columnId] || "";
       const bVal = b.values[sortby.columnId] || "";
@@ -230,7 +248,7 @@ export const SheetPage = () => {
       }
     });
 
-    return sheet.filter((row) => {
+    return rows.filter((row) => {
       for (const [colId, tags] of Object.entries(filterKeys)) {
         const rowTagsString = row.values[colId] || "";
         const rowTags = parseTags(rowTagsString);
@@ -242,7 +260,7 @@ export const SheetPage = () => {
       }
       return true;
     });
-  }, [filterKeys, sheetData, sortby]);
+  }, [computedCells, filterKeys, sheetData, sortby]);
 
   // SheetPage only: the table container can expand with rows/columns on load,
   // so we resolve the initial draggable position in a layout effect before paint.
@@ -587,7 +605,7 @@ export const SheetPage = () => {
                       rowId={row.id}
                       key={column.id}
                       value={row.values[column.id]}
-                      sheetData={sheetData}
+                      formulaValue={row.formulaValues[column.id]}
                       columnInfo={column}
                       onCellUpdate={onUpdateCell}
                       tagSuggestions={sheetData.tagCache[column.id]}
