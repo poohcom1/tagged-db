@@ -6,11 +6,14 @@ import { NumberEdit } from "./cellEdit/NumberEdit";
 import { EnumEdit } from "./cellEdit/EnumEdit";
 import { TagEdit } from "./cellEdit/TagEdit";
 import { DateEdit } from "./cellEdit/DateEdit";
+import { FormulaEdit } from "./cellEdit/FormulaEdit";
+import { ComputedValue } from "../../../utils/formulaComputation";
 
 interface Prop {
   rowId: string;
   columnInfo: Column;
   value?: ColumnValue;
+  formulaValue?: ComputedValue;
   tagSuggestions?: string[];
   onTagClicked: (tag: string, e: React.MouseEvent) => void;
 
@@ -22,6 +25,7 @@ export const Cell = React.memo(
     rowId,
     columnInfo,
     value,
+    formulaValue,
     onCellUpdate,
     tagSuggestions,
     onTagClicked,
@@ -60,8 +64,18 @@ export const Cell = React.memo(
           );
         case "date":
           return <DateEdit value={value} onChange={onChanged} />;
+        case "formula":
+          return <FormulaEdit value={formulaValue} />;
       }
-    }, [columnInfo, value, onChanged, rowId, tagSuggestions, onTagClicked]);
+    }, [
+      columnInfo,
+      formulaValue,
+      onChanged,
+      onTagClicked,
+      rowId,
+      tagSuggestions,
+      value,
+    ]);
 
     return <Td>{EditComponent}</Td>;
   },
