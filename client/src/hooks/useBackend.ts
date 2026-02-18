@@ -34,11 +34,15 @@ export const useStorageBackend = () => {
 
   // Update URL base on storage key
   useEffect(() => {
-    window.history.pushState(
-      null,
-      "",
-      `${window.location.pathname}${currentStorage.queryParam ? `?${currentStorage.queryParam}` : ""}`,
-    );
+    const newUrl = `${window.location.pathname}${
+      currentStorage.queryParam ? `?${currentStorage.queryParam}` : ""
+    }`;
+
+    const currentUrl = window.location.pathname + window.location.search;
+
+    if (currentUrl !== newUrl) {
+      window.history.pushState(null, "", newUrl);
+    }
   }, [currentStorage.queryParam]);
 
   const setUseLocalStorage = useCallback(() => {
