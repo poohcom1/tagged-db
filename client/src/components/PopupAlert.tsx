@@ -29,8 +29,9 @@ export const PopupAlert = () => {
     popupStore.get,
   );
 
-  // Prompt State
+  // Sub State
   const [promptValue, setPromptValue] = useState("");
+  const [optionValue, setOptionValue] = useState("");
 
   useEffect(() => {
     if (!currentAlert) return;
@@ -61,6 +62,8 @@ export const PopupAlert = () => {
     }
     if (currentAlert.type === "prompt") {
       setPromptValue(currentAlert.defaultPrompt ?? "");
+    } else if (currentAlert.type === "options") {
+      setOptionValue(currentAlert.options[0]);
     }
   }, [currentAlert]);
 
@@ -136,6 +139,53 @@ export const PopupAlert = () => {
               onClick={() => {
                 popupStore.clear({ type: "prompt", response: null });
                 setPromptValue("");
+              }}
+            >
+              Cancel
+            </button>
+          </ConfirmRow>
+        </>
+      );
+      break;
+    case "options":
+      alertComponent = (
+        <>
+          <WindowHeader>{currentAlert.title ?? "Options"}</WindowHeader>
+          <Container>
+            {currentAlert.options.map((option) => (
+              <div
+                key={option}
+                style={{ display: "flex", alignItems: "center" }}
+              >
+                <input
+                  type="radio"
+                  id={option}
+                  value={option}
+                  name="popupOptions"
+                  onChange={(e) => setOptionValue(e.target.value)}
+                  checked={optionValue === option}
+                  style={{ cursor: "pointer" }}
+                />
+                <label htmlFor={option} style={{ cursor: "pointer" }}>
+                  {option}
+                </label>
+              </div>
+            ))}
+          </Container>
+          <ConfirmRow>
+            <button
+              disabled={!optionValue}
+              onClick={() => {
+                popupStore.clear({ type: "options", response: optionValue });
+                setOptionValue("");
+              }}
+            >
+              Confirm
+            </button>
+            <button
+              onClick={() => {
+                popupStore.clear({ type: "options", response: null });
+                setOptionValue("");
               }}
             >
               Cancel

@@ -5,13 +5,23 @@ export type PopupInfo =
       message: string;
       title?: string;
     }
-  | {
-      type: "prompt";
-      message: string;
-      title?: string;
-      defaultPrompt?: string;
-      password?: boolean;
-    };
+  | PopupInfoPrompt
+  | PopupInfoOptions;
+
+export type PopupInfoPrompt = {
+  type: "prompt";
+  message: string;
+  title?: string;
+  defaultPrompt?: string;
+  password?: boolean;
+};
+
+export type PopupInfoOptions = {
+  type: "options";
+  title?: string;
+  options: string[];
+};
+
 type PopupResponse =
   | {
       type: "alert";
@@ -22,6 +32,10 @@ type PopupResponse =
     }
   | {
       type: "prompt";
+      response: string | null;
+    }
+  | {
+      type: "options";
       response: string | null;
     };
 
@@ -63,6 +77,19 @@ export const popupPrompt = async (
   });
   currentDoneCallback = null;
   return response.type === "prompt" ? response.response : null;
+};
+
+export const popupOptions = async <T extends string>(
+  options: T[],
+  title?: string,
+): Promise<T | null> => {
+  setPopupAlert({ type: "options", options, title });
+  await new Promise((resolve) => setTimeout(resolve, DELAY_PADDING));
+  const response = await new Promise<PopupResponse>((resolve) => {
+    currentDoneCallback = resolve;
+  });
+  currentDoneCallback = null;
+  return response.type === "options" ? (response.response as T) : null;
 };
 
 // Store
