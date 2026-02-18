@@ -37,6 +37,7 @@ import {
 } from "../../utils/formulaComputation";
 
 const MAX_HEIGHT_OFFSET = 40;
+const TABLE_TOP_MASK_HEIGHT = 8;
 const DEFAULT_POSITION = { x: 48, y: 52 };
 const MIN_TOP = 36; // 36 number came from header height
 const OVERFLOW_INITIAL_POSITION = { x: 0, y: MIN_TOP };
@@ -72,6 +73,7 @@ const MainContainer = styled.div`
 `;
 
 const VContainer = styled.div`
+  --table-top-mask-height: ${TABLE_TOP_MASK_HEIGHT}px;
   display: flex;
   flex-direction: column;
   flex: 1 1 auto;
@@ -83,8 +85,16 @@ const VContainer = styled.div`
   border-top: 2px solid grey;
   border-left: 2px solid grey;
   background-color: white;
-  padding: 8px;
+  padding: 0 8px 8px;
   /* flex-grow: 1; */
+`;
+
+const TableTopMask = styled.div`
+  position: sticky;
+  top: 0;
+  height: var(--table-top-mask-height);
+  background-color: white;
+  flex-shrink: 0;
 `;
 
 const VSep = styled.div`
@@ -522,6 +532,7 @@ export const SheetPage = () => {
         {<ContextPanel />}
 
         <VContainer ref={tableViewportRef}>
+          <TableTopMask />
           {/* Table */}
           <Table style={{ flexGrow: 1 }}>
             <Thead>
