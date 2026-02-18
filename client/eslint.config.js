@@ -4,7 +4,7 @@ import reactHooks from "eslint-plugin-react-hooks";
 import tseslint from "typescript-eslint";
 
 // Downgrade only "error" rules to "warn"
-const tsConfigsWarn = tseslint.configs.recommended.map(config => {
+const tsConfigsWarn = tseslint.configs.recommended.map((config) => {
   if (!config.rules) return config;
 
   const newRules = Object.fromEntries(
@@ -19,7 +19,7 @@ const tsConfigsWarn = tseslint.configs.recommended.map(config => {
       }
 
       return [rule, value];
-    })
+    }),
   );
 
   return {
@@ -28,15 +28,11 @@ const tsConfigsWarn = tseslint.configs.recommended.map(config => {
   };
 });
 
-export default defineConfig(
-  eslint.configs.recommended,
-  ...tsConfigsWarn,
-  {
-    plugins: {
-      "react-hooks": reactHooks,
-    },
-    rules: {
-      "react-hooks/exhaustive-deps": "warn",
-    },
-  }
-);
+export default defineConfig(eslint.configs.recommended, ...tsConfigsWarn, {
+  plugins: {
+    "react-hooks": reactHooks,
+  },
+  rules: {
+    "react-hooks/exhaustive-deps": "warn",
+  },
+});
