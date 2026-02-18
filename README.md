@@ -1,39 +1,16 @@
 # My Tagged DB
 
-A simple spreadsheet for tagging all your favorite things.
+A minimal spreadsheet app for tagging all your favorite things.
 
 ![Spreadsheet](.github/images/sheet.png)
 
 ## Features
 
-### Spreadsheet
-
-- [x] Cell types
-  - [x] Text / Links
-  - [x] Number
-  - [x] Dropdown
-  - [x] Tags
-  - [x] Dates
-- [ ] View
-  - [x] Column sorting
-  - [ ] Text filtering
-  - [x] Tag filtering
-- [ ] Refactoring
-  - [x] Dropdown option renaming
-  - [ ] Tag renaming
-- [x] Navigation
-  - [x] Cell tab controls
-
-### File Manager
-
-- [x] Local storage
-- [x] Configurable remotes
-  - [ ] MongoDB Backend
-  - [x] FS Backend
-  - [x] Memory Backend
-- [ ] Native file protocols integration
-- [ ] CSS export/import
-- [x] Adorable retro aesthetic
+- A minimal spreadsheet system with set column types.
+- A tagging system with filtering and sorting.
+- Formulas with Python scripting.
+- A "bring your own backend" system for cloud storage.
+- CSV importing/exporting.
 
 ## Development
 
