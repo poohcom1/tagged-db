@@ -391,6 +391,7 @@ export const MySheetsPage = () => {
         }
       });
     }
+    setSelectedSheet("");
   }, [selectedSheet, sheets, storageBackend, fetchSheets]);
 
   // Exporting/Importing function
