@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { apiBackend } from "../storageBackends/apiBackend";
 import { localStorageBackend } from "../storageBackends/localStorageBackend";
 import { StorageBackend } from "../storageBackends/storageBackend";
@@ -17,6 +17,7 @@ const getCurrentBackend = (searchParamString: string): StorageBackend => {
 
 export const useStorageBackend = () => {
   const { search } = useLocation();
+  const navigate = useNavigate();
 
   const [currentStorage, setCurrentStorage] = useState<StorageBackend>(
     getCurrentBackend(search),
@@ -41,9 +42,9 @@ export const useStorageBackend = () => {
     const currentUrl = window.location.pathname + window.location.search;
 
     if (currentUrl !== newUrl) {
-      window.history.pushState(null, "", newUrl);
+      navigate(newUrl);
     }
-  }, [currentStorage.queryParam]);
+  }, [currentStorage.queryParam, navigate]);
 
   const setUseLocalStorage = useCallback(() => {
     if (
