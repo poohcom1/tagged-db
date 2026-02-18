@@ -5,7 +5,6 @@ import {
   ColumnType,
   EnumColumn,
   FormulaColumn,
-  FormulaType,
   SheetData,
   TagsColumn,
 } from "@app/shared/types/sheet";
@@ -19,12 +18,9 @@ import { ModalContainer } from "../../../components/ModalContainer";
 import { ColumnEditAction, ColumnEditType } from "@app/shared/types/action";
 import { popupAlert, popupConfirm } from "../../../utils/popup";
 import { errorToString } from "@app/shared/util";
-import {
-  DEFAULT_FORMULA_TYPE,
-  DEFAULT_FORMULAS,
-  FORMULA_TYPE_EXPRESSION,
-  FORMULA_TYPE_MODULE,
-} from "@app/shared/formula";
+import { BUILT_IN_FUNCS, DEFAULT_FORMULA } from "@app/shared/formula";
+import { LS_KEY_CODE_EDITOR_SIZE } from "../../../storageBackends/constants";
+import "./column-edit.css";
 
 // Style
 const Container = styled.div`
@@ -449,6 +445,10 @@ const TagsAdvancedEdit = (props: {
   );
 };
 
+import rehypePrism from "rehype-prism-plus";
+import rehypeRewrite from "rehype-rewrite";
+import { Root, Element, RootContent } from "hast";
+
 const FormulaAdvancedEdit = (props: {
   column: FormulaColumn;
   actions: RefObject<Actions>;
@@ -456,75 +456,121 @@ const FormulaAdvancedEdit = (props: {
   const { column, actions } = props;
 
   const [editedFormula, setEditedFormula] = useState<string>(
-    column.formula ??
-      DEFAULT_FORMULAS[column.formulaType ?? DEFAULT_FORMULA_TYPE],
+    column.formula ?? DEFAULT_FORMULA,
   );
-  const [editedFormulaType, setEditedFormulaType] = useState<FormulaType>(
-    column.formulaType ?? DEFAULT_FORMULA_TYPE,
-  );
-  const formulasCacheMap = useRef<Record<FormulaType, string>>({
-    ...DEFAULT_FORMULAS,
-  });
 
-  // On first load
+  const textAreaRef = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
-    formulasCacheMap.current = DEFAULT_FORMULAS;
-    formulasCacheMap.current[column.formulaType ?? DEFAULT_FORMULA_TYPE] =
-      column.formula ?? "";
+    const formula = column.formula ?? DEFAULT_FORMULA;
+    // go to end of selection
+    textAreaRef.current?.focus();
+    textAreaRef.current?.setSelectionRange(formula.length, formula.length);
   }, [column]);
 
   // Dep
   useEffect(() => {
-    if (editedFormula === "") return;
     actions.current["formula"] = {
       editType: "formula",
       formula: editedFormula,
-      formulaType: editedFormulaType,
     };
-  }, [actions, column.formula, editedFormula, editedFormulaType]);
+  }, [actions, editedFormula]);
 
   const onFormulaChange = (updatedFormula: string) => {
-    formulasCacheMap.current[editedFormulaType] = updatedFormula;
     setEditedFormula(updatedFormula);
   };
 
-  const onFormulaTypeChange = (updatedFormulaType: FormulaType) => {
-    if (updatedFormulaType === editedFormulaType) return;
+  // Resize save
+  const divRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const divContainer = divRef.current;
+    if (!divContainer) return;
 
-    setEditedFormula(formulasCacheMap.current[updatedFormulaType]);
-    setEditedFormulaType(updatedFormulaType);
-  };
+    // Restore
+    const saved = localStorage.getItem(LS_KEY_CODE_EDITOR_SIZE);
+    if (saved) {
+      const { width, height } = JSON.parse(saved);
+      divContainer.style.width = width + "px";
+      divContainer.style.height = height + "px";
+    }
+
+    const observer = new MutationObserver(() => {
+      localStorage.setItem(
+        LS_KEY_CODE_EDITOR_SIZE,
+        JSON.stringify({
+          width: divContainer.offsetWidth,
+          height: divContainer.offsetHeight,
+        }),
+      );
+    });
+
+    observer.observe(divContainer, {
+      attributes: true,
+      attributeFilter: ["style"],
+    });
+
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <>
       <EditRow label={`Formula:`}>
-        <CodeEditor
-          language="python"
+        <div
+          ref={divRef}
           style={{
-            width: "500px",
+            resize: "both" /* makes draggable corner */,
+            overflow: "auto" /* needed for resize to work in some browsers */,
             height: "300px",
-            fontFamily: "monospace",
-            fontWeight: 700,
-            backgroundColor: "#f3f3f3",
+            width: "500px",
           }}
-          data-color-mode="light"
-          value={editedFormula}
-          onChange={(e) => onFormulaChange(e.target.value)}
-          placeholder={DEFAULT_FORMULAS[editedFormulaType]}
-        />
-      </EditRow>
-      <EditRow label="Advanced:" labelFor="formula-type-module">
-        <input
-          id="formula-type-module"
-          type="checkbox"
-          onChange={(e) => {
-            if (e.target.checked) {
-              onFormulaTypeChange(FORMULA_TYPE_MODULE);
-            } else {
-              onFormulaTypeChange(FORMULA_TYPE_EXPRESSION);
-            }
-          }}
-        />
+        >
+          <CodeEditor
+            ref={textAreaRef}
+            language="python"
+            style={{
+              fontFamily:
+                "ui-monospace,SFMono-Regular,SF Mono,Consolas,Liberation Mono,Menlo,monospace",
+              fontWeight: 700,
+              backgroundColor: "#f3f3f3",
+              height: "100%",
+              width: "100%",
+            }}
+            data-color-mode="light"
+            value={editedFormula}
+            onChange={(e) => onFormulaChange(e.target.value)}
+            placeholder={DEFAULT_FORMULA}
+            rehypePlugins={[
+              [rehypePrism, { ignoreMissing: true, showLineNumbers: true }],
+              [
+                rehypeRewrite,
+                {
+                  rewrite: (
+                    node: Root | RootContent,
+                    index: number | null,
+                    parent: Root | Element | null,
+                  ) => {
+                    if (node.type === "text" && parent && index !== null) {
+                      if (BUILT_IN_FUNCS.includes(node.value.trim())) {
+                        parent.children[index] = {
+                          type: "element",
+                          tagName: "span",
+                          properties: {
+                            className: ["function"],
+                          },
+                          children: [
+                            {
+                              type: "text",
+                              value: node.value,
+                            },
+                          ],
+                        };
+                      }
+                    }
+                  },
+                },
+              ],
+            ]}
+          />
+        </div>
       </EditRow>
     </>
   );

@@ -2,8 +2,7 @@
 
 import {
   createModule,
-  DEFAULT_FORMULA_TYPE,
-  DEFAULT_FORMULAS,
+  DEFAULT_FORMULA,
   MAIN_FUNCTION,
 } from "@app/shared/formula";
 import { parseRowvalue } from "@app/shared/sheetValidation";
@@ -50,7 +49,6 @@ type RowCall = {
   columnId: string;
   filename: string;
   code: string;
-  params: Record<string | number, string | number | null>[];
 };
 
 export const starlarkRuntimePromise = Starlark.init(wasmUrl);
@@ -76,7 +74,6 @@ export async function computeSheetValues(
     for (const row of sheetData.rows) {
       // Generate input
       const rowsInput = createRowInputParams(sheetData, row);
-
       if (columnCacheHit && sheetCache) {
         const cacheRow = sheetCache?.rows.find((r) => r.id === row.id);
         if (cacheRow) {
@@ -93,9 +90,7 @@ export async function computeSheetValues(
         rowsInput[i] = parseRowvalue(column.type, row.values[column.id]);
       }
       const code = createModule(
-        column.formulaType ?? DEFAULT_FORMULA_TYPE,
-        column.formula ??
-          DEFAULT_FORMULAS[column.formulaType ?? DEFAULT_FORMULA_TYPE],
+        column.formula ?? DEFAULT_FORMULA,
         sheetData.columns.filter((c) => c.type !== "formula"),
         row,
       );
@@ -104,7 +99,6 @@ export async function computeSheetValues(
         columnId: column.id,
         filename: `formula_${row.id}_${column.id}.star`,
         code,
-        params: [rowsInput],
       });
     }
   }
@@ -128,7 +122,7 @@ export async function computeSheetValues(
   for (const rowCall of rowCalls) {
     runPromises.push(
       starklarkInstance
-        .run(rowCall.filename, MAIN_FUNCTION, rowCall.params, {}, 1)
+        .run(rowCall.filename, MAIN_FUNCTION, [], {}, 1)
         .then((result) => {
           const rowValues = computedValues[rowCall.rowId] ?? {};
           rowValues[rowCall.columnId] = Ok(result);
@@ -136,7 +130,9 @@ export async function computeSheetValues(
         })
         .catch((err) => {
           const rowValues = computedValues[rowCall.rowId] ?? {};
-          rowValues[rowCall.columnId] = Err(String(err));
+          rowValues[rowCall.columnId] = Err(
+            String(err).replace(rowCall.filename + ":", ""),
+          );
           computedValues[rowCall.rowId] = rowValues;
         }),
     );
