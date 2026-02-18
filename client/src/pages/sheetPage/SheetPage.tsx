@@ -9,7 +9,15 @@ import {
   useState,
 } from "react";
 import { Cell } from "./components/Cell";
-import { Table, Th, Thead, Tbody, HEADER_HEIGHT, Td } from "./components/Table";
+import {
+  Table,
+  Th,
+  Thead,
+  Tbody,
+  HEADER_HEIGHT,
+  TABLE_TOP_MASK_HEIGHT,
+  Td,
+} from "./components/Table";
 import styled from "styled-components";
 import { useParams } from "react-router-dom";
 import { IoIosAdd } from "react-icons/io";
@@ -83,8 +91,16 @@ const VContainer = styled.div`
   border-top: 2px solid grey;
   border-left: 2px solid grey;
   background-color: white;
-  padding: 8px;
+  padding: 0 8px 8px;
   /* flex-grow: 1; */
+`;
+
+const TableTopMask = styled.div`
+  position: sticky;
+  top: 0;
+  height: ${TABLE_TOP_MASK_HEIGHT}px;
+  background-color: white;
+  flex-shrink: 0;
 `;
 
 const VSep = styled.div`
@@ -522,6 +538,7 @@ export const SheetPage = () => {
         {<ContextPanel />}
 
         <VContainer ref={tableViewportRef}>
+          <TableTopMask />
           {/* Table */}
           <Table style={{ flexGrow: 1 }}>
             <Thead>
