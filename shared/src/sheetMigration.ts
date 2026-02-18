@@ -227,7 +227,6 @@ function updateColumn(
         return Err("Column is not a formula column");
       }
       column.formula = payload.formula;
-      column.formulaType = payload.formulaType;
       break;
   }
 

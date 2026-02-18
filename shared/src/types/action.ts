@@ -1,4 +1,4 @@
-import { ColumnType, FormulaType } from "./sheet.js";
+import { ColumnType } from "./sheet.js";
 
 export type SheetActionType =
   | "update_cell"
@@ -90,7 +90,6 @@ interface ColumnTagRenameAction extends BaseColumnAction {
 interface ColumnFormulaEditAction extends BaseColumnAction {
   editType: "formula";
   formula: string;
-  formulaType: FormulaType;
 }
 
 interface ColumnReorderAction extends BaseColumnAction {

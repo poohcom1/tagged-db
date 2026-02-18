@@ -67,11 +67,9 @@ interface DateColumn extends BaseColumn {
   type: "date";
 }
 
-export type FormulaType = "module" | "expression";
 export interface FormulaColumn extends BaseColumn {
   type: "formula";
   formula?: string;
-  formulaType?: FormulaType;
 }
 
 export interface Row {

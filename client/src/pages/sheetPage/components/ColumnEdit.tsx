@@ -1,4 +1,3 @@
-import CodeEditor from "@uiw/react-textarea-code-editor";
 import {
   Column,
   COLUMN_TYPES,
@@ -18,7 +17,10 @@ import { ModalContainer } from "../../../components/ModalContainer";
 import { ColumnEditAction, ColumnEditType } from "@app/shared/types/action";
 import { popupAlert, popupConfirm } from "../../../utils/popup";
 import { errorToString } from "@app/shared/util";
-import { BUILT_IN_FUNCS, DEFAULT_FORMULA } from "@app/shared/formula";
+import {
+  DEFAULT_FORMULA,
+  getColumnInjectedVariables,
+} from "@app/shared/formula";
 import { LS_KEY_CODE_EDITOR_SIZE } from "../../../storageBackends/constants";
 import "./column-edit.css";
 
@@ -131,7 +133,11 @@ export const ColumnEdit = ({
       break;
     case "formula":
       advancedEditEl = (
-        <FormulaAdvancedEdit column={column} actions={actions} />
+        <FormulaAdvancedEdit
+          column={column}
+          columns={sheetData.columns}
+          actions={actions}
+        />
       );
       break;
     default:
@@ -445,15 +451,14 @@ const TagsAdvancedEdit = (props: {
   );
 };
 
-import rehypePrism from "rehype-prism-plus";
-import rehypeRewrite from "rehype-rewrite";
-import { Root, Element, RootContent } from "hast";
+import { FormulaCodeEditor } from "./formula/FormulaCodeEdit";
 
 const FormulaAdvancedEdit = (props: {
   column: FormulaColumn;
+  columns: Column[];
   actions: RefObject<Actions>;
 }) => {
-  const { column, actions } = props;
+  const { column, columns, actions } = props;
 
   const [editedFormula, setEditedFormula] = useState<string>(
     column.formula ?? DEFAULT_FORMULA,
@@ -512,66 +517,30 @@ const FormulaAdvancedEdit = (props: {
   }, []);
 
   return (
-    <>
-      <EditRow label={`Formula:`}>
+    <tr>
+      <TdLabel style={{ fontSize: "medium" }}>
+        <label>Formula:</label>
+      </TdLabel>
+      <td>
         <div
           ref={divRef}
           style={{
-            resize: "both" /* makes draggable corner */,
-            overflow: "auto" /* needed for resize to work in some browsers */,
-            height: "300px",
-            width: "500px",
+            width: "600px",
+            height: "400px",
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.stopPropagation();
+            }
           }}
         >
-          <CodeEditor
-            ref={textAreaRef}
-            language="python"
-            style={{
-              fontFamily:
-                "ui-monospace,SFMono-Regular,SF Mono,Consolas,Liberation Mono,Menlo,monospace",
-              fontWeight: 700,
-              backgroundColor: "#f3f3f3",
-              height: "100%",
-              width: "100%",
-            }}
-            data-color-mode="light"
+          <FormulaCodeEditor
             value={editedFormula}
-            onChange={(e) => onFormulaChange(e.target.value)}
-            placeholder={DEFAULT_FORMULA}
-            rehypePlugins={[
-              [rehypePrism, { ignoreMissing: true, showLineNumbers: true }],
-              [
-                rehypeRewrite,
-                {
-                  rewrite: (
-                    node: Root | RootContent,
-                    index: number | null,
-                    parent: Root | Element | null,
-                  ) => {
-                    if (node.type === "text" && parent && index !== null) {
-                      if (BUILT_IN_FUNCS.includes(node.value.trim())) {
-                        parent.children[index] = {
-                          type: "element",
-                          tagName: "span",
-                          properties: {
-                            className: ["function"],
-                          },
-                          children: [
-                            {
-                              type: "text",
-                              value: node.value,
-                            },
-                          ],
-                        };
-                      }
-                    }
-                  },
-                },
-              ],
-            ]}
+            onChange={onFormulaChange}
+            completionVariables={getColumnInjectedVariables(columns)}
           />
         </div>
-      </EditRow>
-    </>
+      </td>
+    </tr>
   );
 };

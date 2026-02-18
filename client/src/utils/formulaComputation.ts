@@ -4,6 +4,7 @@ import {
   createModule,
   DEFAULT_FORMULA,
   MAIN_FUNCTION,
+  TAB_SPACES,
 } from "@app/shared/formula";
 import { parseRowvalue } from "@app/shared/sheetValidation";
 import { Err, Ok, Result } from "@app/shared/types/result";
@@ -49,6 +50,7 @@ type RowCall = {
   columnId: string;
   filename: string;
   code: string;
+  injectedLineCount: number;
 };
 
 export const starlarkRuntimePromise = Starlark.init(wasmUrl);
@@ -89,7 +91,7 @@ export async function computeSheetValues(
         const column = sheetData.columns[i];
         rowsInput[i] = parseRowvalue(column.type, row.values[column.id]);
       }
-      const code = createModule(
+      const [code, injectedLineCount] = createModule(
         column.formula ?? DEFAULT_FORMULA,
         sheetData.columns.filter((c) => c.type !== "formula"),
         row,
@@ -99,6 +101,7 @@ export async function computeSheetValues(
         columnId: column.id,
         filename: `formula_${row.id}_${column.id}.star`,
         code,
+        injectedLineCount,
       });
     }
   }
@@ -130,8 +133,15 @@ export async function computeSheetValues(
         })
         .catch((err) => {
           const rowValues = computedValues[rowCall.rowId] ?? {};
+
           rowValues[rowCall.columnId] = Err(
-            String(err).replace(rowCall.filename + ":", ""),
+            String(
+              adjustErrorLine(
+                err,
+                rowCall.filename,
+                rowCall.injectedLineCount + 1,
+              ),
+            ),
           );
           computedValues[rowCall.rowId] = rowValues;
         }),
@@ -160,4 +170,39 @@ function createRowInputParams(
     rowsInput[column.title] = parseRowvalue(column.type, rowValue);
   }
   return rowsInput;
+}
+
+// util
+function adjustErrorLine(
+  err: unknown,
+  filename: string,
+  offset: number,
+): string {
+  const errString = String(err);
+
+  const startIndex = errString.indexOf(filename);
+  if (startIndex === -1) return errString;
+
+  // Get substring starting at filename
+  const afterFile = errString.slice(startIndex);
+
+  // file.star:line:column:...
+  const parts = afterFile.split(":");
+
+  if (parts.length < 3) return errString;
+
+  const line = Number(parts[1]);
+  const column = Number(parts[2]);
+
+  if (Number.isNaN(line)) return errString;
+  if (Number.isNaN(column)) return errString;
+
+  const newLine = line - offset;
+  const newColumn = column - TAB_SPACES.length + 1;
+
+  // Rebuild only the location part
+  const oldLocation = `${parts[0]}:${parts[1]}:${parts[2]}`;
+  const newLocation = `${newLine}:${newColumn}`;
+
+  return errString.replace(oldLocation, newLocation);
 }
