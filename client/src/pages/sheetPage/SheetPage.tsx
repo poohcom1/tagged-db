@@ -46,8 +46,22 @@ import {
 
 const MAX_HEIGHT_OFFSET = 40;
 const DEFAULT_POSITION = { x: 48, y: 52 };
+const MIN_LEFT = 0;
 const MIN_TOP = 36; // 36 number came from header height
 const OVERFLOW_INITIAL_POSITION = { x: 0, y: MIN_TOP };
+
+const getCenteredAxisPosition = (
+  viewportSize: number,
+  contentSize: number | undefined,
+  minPosition: number,
+  fallback: number,
+) => {
+  if (!contentSize || viewportSize <= 0) {
+    return fallback;
+  }
+
+  return Math.max(minPosition, Math.round((viewportSize - contentSize) * 0.5));
+};
 
 // Styles
 const Background = styled.div`
@@ -296,15 +310,33 @@ export const SheetPage = () => {
     const hasHeightOverflow =
       tableViewport.scrollHeight > tableViewport.clientHeight;
 
-    setWindowPosition(
-      hasWidthOverflow || hasHeightOverflow
-        ? OVERFLOW_INITIAL_POSITION
-        : DEFAULT_POSITION,
-    );
+    const containerRect = containerRef.current?.getBoundingClientRect();
+    const viewportWidth = typeof window === "undefined" ? 0 : window.innerWidth;
+    const viewportHeight =
+      typeof window === "undefined" ? 0 : window.innerHeight;
+
+    setWindowPosition({
+      x: hasWidthOverflow
+        ? OVERFLOW_INITIAL_POSITION.x
+        : getCenteredAxisPosition(
+            viewportWidth,
+            containerRect?.width,
+            MIN_LEFT,
+            DEFAULT_POSITION.x,
+          ),
+      y: hasHeightOverflow
+        ? OVERFLOW_INITIAL_POSITION.y
+        : getCenteredAxisPosition(
+            viewportHeight,
+            containerRect?.height,
+            MIN_TOP,
+            DEFAULT_POSITION.y,
+          ),
+    });
 
     initialPositionResolvedRef.current = true;
     setIsWindowReady(true);
-  }, [setWindowPosition, sheetData]);
+  }, [containerRef, setWindowPosition, sheetData]);
 
   useEffect(() => {
     const tableViewport = tableViewportRef.current;
@@ -319,8 +351,8 @@ export const SheetPage = () => {
 
     if (hasWidthOverflow || hasHeightOverflow) {
       setWindowPosition((current) => ({
-        x: hasWidthOverflow ? 0 : current.x,
-        y: hasHeightOverflow ? 0 : current.y,
+        x: hasWidthOverflow ? OVERFLOW_INITIAL_POSITION.x : current.x,
+        y: hasHeightOverflow ? OVERFLOW_INITIAL_POSITION.y : current.y,
       }));
     }
   }, [setWindowPosition, sheetData?.columns.length, sheetData?.rows.length]);
