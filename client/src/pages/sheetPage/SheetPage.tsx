@@ -9,7 +9,15 @@ import {
   useState,
 } from "react";
 import { Cell } from "./components/Cell";
-import { Table, Th, Thead, Tbody, HEADER_HEIGHT, Td } from "./components/Table";
+import {
+  Table,
+  Th,
+  Thead,
+  Tbody,
+  HEADER_HEIGHT,
+  TABLE_TOP_MASK_HEIGHT,
+  Td,
+} from "./components/Table";
 import styled from "styled-components";
 import { useParams } from "react-router-dom";
 import { IoIosAdd } from "react-icons/io";
@@ -37,7 +45,6 @@ import {
 } from "../../utils/formulaComputation";
 
 const MAX_HEIGHT_OFFSET = 40;
-const TABLE_TOP_MASK_HEIGHT = 8;
 const DEFAULT_POSITION = { x: 48, y: 52 };
 const MIN_TOP = 36; // 36 number came from header height
 const OVERFLOW_INITIAL_POSITION = { x: 0, y: MIN_TOP };
@@ -73,7 +80,6 @@ const MainContainer = styled.div`
 `;
 
 const VContainer = styled.div`
-  --table-top-mask-height: ${TABLE_TOP_MASK_HEIGHT}px;
   display: flex;
   flex-direction: column;
   flex: 1 1 auto;
@@ -92,7 +98,7 @@ const VContainer = styled.div`
 const TableTopMask = styled.div`
   position: sticky;
   top: 0;
-  height: var(--table-top-mask-height);
+  height: ${TABLE_TOP_MASK_HEIGHT}px;
   background-color: white;
   flex-shrink: 0;
 `;
