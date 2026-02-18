@@ -1,6 +1,7 @@
 import styled from "styled-components";
 
 export const HEADER_HEIGHT = 36;
+export const TABLE_TOP_MASK_HEIGHT = 8;
 
 export const Table = styled.table`
   border-collapse: collapse;
@@ -22,7 +23,7 @@ export const Th = styled.th`
 
   // Sticky
   position: sticky;
-  top: var(--table-top-mask-height, 0px);
+  top: ${TABLE_TOP_MASK_HEIGHT}px;
   z-index: 30;
   // - border doesn't work with sticky, hack with outline
   outline: 1px solid #7d7d80;
