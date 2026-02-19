@@ -17,7 +17,11 @@ import { COLORS } from "../../styles/colors";
 import { border } from "../../styles/mixins";
 import { DesktopHeader } from "../../components/desktop/DesktopHeader";
 import { useDraggableWindow } from "../../hooks/useDraggableWindow";
-import { exportCsv, importCsv } from "../../utils/csvUtil";
+import {
+  CSV_IMPORT_CANCELLED_ERROR,
+  exportCsv,
+  importCsv,
+} from "../../utils/csvUtil";
 import type { SheetMeta } from "@app/shared/types/sheet";
 import { WindowHeader } from "../../components/desktop/WindowHeader";
 import { popupAlert, popupConfirm, popupPrompt } from "../../utils/popup";
@@ -414,7 +418,11 @@ export const MySheetsPage = () => {
     }
     const csvRes = await importCsv(sheetsMap[storageBackend.id] || []);
     if (!csvRes.ok) {
-      alert("Failed to parse CSV: " + csvRes.error);
+      if (csvRes.error === CSV_IMPORT_CANCELLED_ERROR) {
+        await popupAlert(csvRes.error);
+        return;
+      }
+      await popupAlert("Failed to parse CSV: " + csvRes.error);
       return;
     }
 
@@ -427,7 +435,7 @@ export const MySheetsPage = () => {
     try {
       const importRes = await storageBackend.importSheet(importedSheet);
       if (!importRes.ok) {
-        alert(importRes.error);
+        await popupAlert(importRes.error);
         await fetchSheets();
         return;
       }
