@@ -174,7 +174,7 @@ const File = styled.a<FileProps>`
   &:hover {
     border: 1px solid #00000033;
     text-decoration: ${({ $selected }) =>
-    $selected ? "underline" : "inherit"};
+      $selected ? "underline" : "inherit"};
     cursor: pointer;
   }
 
@@ -215,9 +215,9 @@ export const MySheetsPage = () => {
           typeof window === "undefined"
             ? INITIAL_POSITION_FALLBACK
             : Math.max(
-              34,
-              Math.round(window.innerHeight * INITIAL_POSITION_RATIO),
-            ),
+                34,
+                Math.round(window.innerHeight * INITIAL_POSITION_RATIO),
+              ),
       },
       minTop: 34,
     });
