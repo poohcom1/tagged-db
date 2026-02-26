@@ -45,7 +45,7 @@ import {
 } from "../../utils/formulaComputation";
 
 const MAX_HEIGHT_OFFSET = 40;
-const DEFAULT_POSITION = { x: 48, y: 52 };
+const FALLBACK_POSITION = { x: 48, y: 52 };
 const MIN_LEFT = 0;
 const MIN_TOP = 36; // 36 number came from header height
 const OVERFLOW_INITIAL_POSITION = { x: 0, y: MIN_TOP };
@@ -176,7 +176,7 @@ export const SheetPage = () => {
     windowStyle,
     setWindowPosition,
   } = useDraggableWindow({
-    initialPosition: DEFAULT_POSITION,
+    initialPosition: { x: 0, y: 0 },
     minTop: MIN_TOP,
   });
   const tableViewportRef = useRef<HTMLDivElement | null>(null);
@@ -322,7 +322,7 @@ export const SheetPage = () => {
             viewportWidth,
             containerRect?.width,
             MIN_LEFT,
-            DEFAULT_POSITION.x,
+            FALLBACK_POSITION.x,
           ),
       y: hasHeightOverflow
         ? OVERFLOW_INITIAL_POSITION.y
@@ -330,7 +330,7 @@ export const SheetPage = () => {
             viewportHeight,
             containerRect?.height,
             MIN_TOP,
-            DEFAULT_POSITION.y,
+            FALLBACK_POSITION.y,
           ),
     });
 
