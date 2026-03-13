@@ -213,5 +213,24 @@ export const TagEdit = ({
 };
 
 function fuzzySearch(token: string, tags: string[]) {
-  return tags.filter((tag) => tag.toLowerCase().includes(token.toLowerCase()));
+  if (token.length === 0) {
+    return tags;
+  }
+
+  const sortedTags = tags.sort((a, b) => {
+    if (a === token) {
+      return -1;
+    }
+    if (b === token) {
+      return 1;
+    }
+
+    const aScore = a.toLowerCase().startsWith(token.toLowerCase()) ? 1 : 0;
+    const bScore = b.toLowerCase().startsWith(token.toLowerCase()) ? 1 : 0;
+    return bScore - aScore;
+  });
+
+  return sortedTags.filter((tag) =>
+    tag.toLowerCase().includes(token.toLowerCase()),
+  );
 }
